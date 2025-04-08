@@ -1,13 +1,12 @@
 from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import LLMChain
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
 from sqlalchemy import text
-from utils.tools import fix_capitalization_dynamic, log_agent_response
+from utils.tools import fix_capitalization_dynamic
 from models.model import QueryRequest, QueryResponse
 from langchain_core.prompts import PromptTemplate
-import os
+from services.response_executor import generate_answer
+
 
 # Configuração do banco
 database_uri = "mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
@@ -32,11 +31,9 @@ prompt = PromptTemplate(
 # Cadeia
 chain = LLMChain(llm=llm, prompt=prompt)
 
-# Função principal
 def run_query_agent(query_request: QueryRequest) -> QueryResponse:
-    print("📩 Recebida pergunta:", query_request.question)
-
     try:
+        # Geração da consulta SQL com base na pergunta
         result = chain.invoke({
             "input": query_request.question,
             "table_info": db.get_table_info(),
@@ -44,39 +41,38 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
         })
 
         text_response = result["text"]
-        print("📦 Resposta completa do modelo:", text_response)
+        # Log específico da IA
+        print(f"📦 Resposta completa do modelo: {text_response}")
 
+        # Extração da query SQL da resposta
         sql_start = text_response.find("SQL query:")
         if sql_start != -1:
             raw_query = text_response[sql_start + len("SQL query:"):].strip()
         else:
             raise ValueError("❌ Prefixo 'SQL query:' não encontrado na resposta do modelo.")
 
-        print("🧠 Raw query extraída:", raw_query)
+        # Log da query extraída
+        print(f"🧠 Raw query extraída: {raw_query}")
 
-    except Exception as e:
-        print("❌ Erro ao gerar raw query:", e)
-        raise
-
-    try:
+        # Ajuste na capitalização da query gerada
         fixed_query = fix_capitalization_dynamic(raw_query)
-        print("🧼 Fixed query:", fixed_query)
-    except Exception as e:
-        print("❌ Erro ao aplicar fix_capitalization_dynamic:", e)
-        raise
+        print(f"🧼 Fixed query: {fixed_query}")
 
-    try:
+        # Execução da consulta no banco de dados
         with db._engine.connect() as conn:
             result = conn.execute(text(fixed_query)).fetchall()
             result_data = [
-            {k: str(v) for k, v in row._mapping.items()}
-            for row in result]
-            print("📊 Resultados da query:", result_data)
+                {k: str(v) for k, v in row._mapping.items()}
+                for row in result
+            ]
+            print(f"📊 Resultados da query: {result_data}")
+
+        # Geração da resposta natural baseada nos resultados da consulta
+        answer = generate_answer(query_request.question, result_data)
+        print(f"📝 Resposta gerada pelo modelo: {answer}")
+
     except Exception as e:
-        print("❌ Erro ao executar a query:", e)
+        print(f"❌ Erro ao executar o processo: {e}")
         raise
 
-    log_agent_response(query_request.question, raw_query, fixed_query, result_data)
-
-    return {"output": text_response}
-
+    return {"output": answer}

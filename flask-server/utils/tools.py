@@ -20,11 +20,3 @@ def fix_capitalization_dynamic(query: str) -> str:
         query = pattern.sub(corrected, query)
 
     return query
-
-def log_agent_response(question, raw_query, fixed_query, result_data):
-    print("\n--- LangQueryGen Debug ---")
-    print(f"📩 Pergunta: {question}")
-    print(f"🧠 Raw query: {raw_query}")
-    print(f"🧼 Fixed query: {fixed_query}")
-    print(f"📊 Resultados: {result_data}")
-    print("----------------------------\n")
