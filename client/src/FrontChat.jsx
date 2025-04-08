@@ -50,16 +50,16 @@ export default function ChatInterface() {
     setIsTyping(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/dados", {
+      const response = await fetch("http://localhost:5000/generate-query", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json" },
           // "Authorization": `Bearer ${token}`,
-        body: JSON.stringify({ nome: input, token: token}),
+        body: JSON.stringify({ question: input, token: token}),
       });
 
       const result = await response.json();
-      const outputValue = result.result?.output || "Sem resposta recebida";
+      const outputValue = result.output || "Sem resposta recebida";
 
       let visibleText = "";
       const fullText = outputValue;
