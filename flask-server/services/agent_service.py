@@ -2,11 +2,10 @@ from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import LLMChain
 from sqlalchemy import text
-from utils.tools import fix_capitalization_dynamic
 from models.model import QueryRequest, QueryResponse
 from langchain_core.prompts import PromptTemplate
-from services.response_executor import generate_answer
-
+from services.validation_agent import validation_agent_executor  # IA2 para validar a query
+from services.response_executor import generate_answer  # IA3 para gerar a resposta natural
 
 # Configuração do banco
 database_uri = "mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
@@ -54,18 +53,21 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
         # Log da query extraída
         print(f"🧠 Raw query extraída: {raw_query}")
 
-        # Ajuste na capitalização da query gerada
-        fixed_query = fix_capitalization_dynamic(raw_query)
-        print(f"🧼 Fixed query: {fixed_query}")
-
         # Execução da consulta no banco de dados
         with db._engine.connect() as conn:
-            result = conn.execute(text(fixed_query)).fetchall()
+            result = conn.execute(text(raw_query)).fetchall()
             result_data = [
                 {k: str(v) for k, v in row._mapping.items()}
                 for row in result
             ]
             print(f"📊 Resultados da query: {result_data}")
+
+        # Envia a query e os resultados para IA2 (validação)
+        refined_query = validation_agent_executor.invoke({
+            "input": raw_query, 
+            "results": result_data
+        })
+        print(f"🔍 Query refinada pela IA2: {refined_query}")
 
         # Geração da resposta natural baseada nos resultados da consulta
         answer = generate_answer(query_request.question, result_data)
