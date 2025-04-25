@@ -2,10 +2,11 @@ from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import LLMChain
 from sqlalchemy import text
+from utils.tools import fix_capitalization_dynamic
 from models.model import QueryRequest, QueryResponse
 from langchain_core.prompts import PromptTemplate
-from services.validation_agent import validation_agent_executor  # IA2 para validar a query
-from services.response_executor import generate_answer  # IA3 para gerar a resposta natural
+from services.response_executor import generate_answer
+
 
 # Configuração do banco
 database_uri = "mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
@@ -61,20 +62,29 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
                 for row in result
             ]
             print(f"📊 Resultados da query: {result_data}")
-
-        # Envia a query e os resultados para IA2 (validação)
-        refined_query = validation_agent_executor.invoke({
-            "input": raw_query, 
-            "results": result_data
+        
+        # Se a execução da consulta for bem-sucedida, passamos a consulta e o resultado para a IA2
+        validation_result = validation_agent_executor.invoke({
+            "user_question": query_request.question,
+            "generated_query": raw_query,
+            "query_result": result_data  # Passando o resultado para a IA2
         })
-        print(f"🔍 Query refinada pela IA2: {refined_query}")
-
-        # Geração da resposta natural baseada nos resultados da consulta
-        answer = generate_answer(query_request.question, result_data)
-        print(f"📝 Resposta gerada pelo modelo: {answer}")
+        print(f"🔧 Query refinada pela IA2: {validation_result}")
 
     except Exception as e:
-        print(f"❌ Erro ao executar o processo: {e}")
-        raise
+        print(f"❌ Erro ao executar a consulta, enviando para IA2 para validação e refinamento: {e}")
+        # Se houve erro, passamos a consulta, o erro e o resultado para a IA2
+        error_message = str(e)  # Capturando o erro como uma string para enviar à IA2
+        
+        validation_result = validation_agent_executor.invoke({
+            "user_question": query_request.question,
+            "generated_query": raw_query,
+            "query_result": error_message  # Passando o erro para ajudar a IA2
+        })
+        print(f"🔧 Query refinada pela IA2 após erro: {validation_result}")
+    
+    # Agora, após a IA2 refinar a query, chamamos a IA3 para gerar a resposta natural
+    answer = generate_answer(query_request.question, result_data)
+    print(f"📝 Resposta gerada pelo modelo: {answer}")
 
     return {"output": answer}

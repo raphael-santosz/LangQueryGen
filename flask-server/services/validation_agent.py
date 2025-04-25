@@ -5,29 +5,36 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, Prom
 from langchain.agents import AgentExecutor
 from langchain_ollama import ChatOllama
 
+
+
 llm = ChatOllama(model="mistral", temperature=0)
 
 # Ferramenta para validar e ajustar a query
 @tool
-def validate_and_refine_query(user_question: str, generated_query: str, query_results: list) -> str:
+def validate_and_refine_query(user_question: str, generated_query: str) -> str:
     """
-    Recebe a pergunta do usuário, a query gerada pela IA1 e os resultados da consulta ao banco.
-    Verifica se a query é adequada e a refina se necessário, retornando uma nova query refinada.
+    Recebe a pergunta do usuário e a query gerada pela IA1. Verifica se a query é adequada
+    e a refina se necessário, retornando uma nova query refinada.
     """
     # Prompt para validar e ajustar a query
     template = """
     A partir da seguinte pergunta do usuário: {user_question}, temos a seguinte query SQL gerada: {generated_query}. 
-    Os resultados da consulta ao banco de dados foram: {query_results}.
-    O objetivo é verificar se a query gerada responde de forma correta e precisa à pergunta do usuário, considerando os resultados do banco.
+    O objetivo é verificar se a query gerada responde de forma correta e precisa à pergunta do usuário. 
     Se necessário, faça ajustes e refinações na query para torná-la mais adequada, sem alterar seu sentido original. 
+
+    **Instruções de SQL Avançado:**
+    - Se a pergunta envolver mais de uma tabela, adicione um `JOIN` apropriado.
+    - Se a consulta envolver uma operação de agregação (ex: `COUNT`, `AVG`, `SUM`), adicione a cláusula `GROUP BY` corretamente.
+    - Se a pergunta envolver um intervalo de datas, use a cláusula `BETWEEN` ou condições de comparação.
+    - Se a consulta retornar múltiplos resultados, considere usar `LIMIT` ou `TOP` para garantir um único resultado.
 
     Retorne a query refinada ou uma nova query se achar necessário.
     """
     
-    prompt = PromptTemplate(input_variables=["user_question", "generated_query", "query_results"], template=template)
+    prompt = PromptTemplate(input_variables=["user_question", "generated_query"], template=template)
     
     # Formatação do prompt
-    formatted_prompt = prompt.format(user_question=user_question, generated_query=generated_query, query_results=query_results)
+    formatted_prompt = prompt.format(user_question=user_question, generated_query=generated_query)
     
     # Invocação do modelo para gerar a nova query
     result = llm.invoke(formatted_prompt)
