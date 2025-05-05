@@ -1,14 +1,13 @@
-from langchain.agents import tool
-from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
-from langchain.agents import AgentExecutor
 from langchain_ollama import ChatOllama
+from langchain_community.utilities import SQLDatabase
+from langchain_core.prompts import PromptTemplate
+from sqlalchemy.sql import text
+from utils.tools import extract_sql_query_from_response  # Importando a função de extração
 
+# Configurações do modelo e banco
 llm = ChatOllama(model="mistral", temperature=0)
+db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
 
-# Ferramenta para validar e ajustar a query
-@tool
 def validate_and_refine_query(user_question: str, generated_query: str, query_results: list) -> str:
     """
     Recebe a pergunta do usuário, a query gerada pela IA1 e os resultados da consulta ao banco.
@@ -18,10 +17,10 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
     template = """
     A partir da seguinte pergunta do usuário: {user_question}, temos a seguinte query SQL gerada: {generated_query}. 
     Os resultados da consulta ao banco de dados foram: {query_results}.
-    O objetivo é verificar se a query gerada responde de forma correta e precisa à pergunta do usuário, considerando os resultados do banco.
-    Se necessário, faça ajustes e refinações na query para torná-la mais adequada, sem alterar seu sentido original. 
-
-    Retorne a query refinada ou uma nova query se achar necessário.
+    O objetivo é verificar se a query gerada responde de forma correta e precisa à pergunta do usuário, considerando os resultados do banco.      
+    Se necessário, faça ajustes e refinações na query para torná-la mais adequada, sem alterar seu sentido original.
+    
+    Retorne apenas a query SQL gerada ou ajustada, sem a necessidade de explicar sua validade.
     """
     
     prompt = PromptTemplate(input_variables=["user_question", "generated_query", "query_results"], template=template)
@@ -29,32 +28,31 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
     # Formatação do prompt
     formatted_prompt = prompt.format(user_question=user_question, generated_query=generated_query, query_results=query_results)
     
-    # Invocação do modelo para gerar a nova query
-    result = llm.invoke(formatted_prompt)
+    print(f"🔍 Antes de chamar invoke: {formatted_prompt}")  
     
-    # A resposta será a query refinada
-    return result["text"]
+    try:
+        # Chama o modelo para executar a query gerada ou ajustada
+        result = llm.invoke(formatted_prompt)
+        print(f"🔍 Resultado após invoke: {result}")
+        
+        query = extract_sql_query_from_response(result)
+        
+        # Executando a consulta no banco de dados
+        with db._engine.connect() as conn:
+            result = conn.execute(text(query)).fetchall()
+            refined_result_data = [
+                {k: str(v) for k, v in row._mapping.items()}
+                for row in result
+            ]
+            
+            # Se não houver resultados, passamos a mensagem para a IA3
+            if not refined_result_data:
+                print("⚠️ A IA2 não retornou resultados para a query gerada. Passando para a IA3...")
+                return "Não foi possível encontrar dados relacionados à sua pergunta."
 
-# Prompt de validação de SQL para IA2
-promptValid = ChatPromptTemplate.from_messages([
-    ("system", "Você é um agente especializado em SQL. Seu objetivo é avaliar e ajustar consultas SQL geradas para garantir que atendam à pergunta do usuário de forma precisa e eficiente. Se necessário, modifique a query gerada para torná-la mais apropriada."),
-    ("user", "{input}"),
-    MessagesPlaceholder(variable_name="agent_scratchpad"),
-])
-
-# Conectando ferramentas e prompt
-llm_with_tools = llm.bind_tools([validate_and_refine_query])
-
-# Criação do agente para a IA2
-agentValid = (
-    {
-        "input": lambda x: x["input"],  # Passando a entrada da pergunta
-        "agent_scratchpad": lambda x: format_to_openai_tool_messages(x["intermediate_steps"]),
-    }
-    | promptValid
-    | llm_with_tools
-    | OpenAIToolsAgentOutputParser()
-)
-
-# Executor para IA2
-validation_agent_executor = AgentExecutor(agent=agentValid, tools=[validate_and_refine_query], verbose=True)
+            print(f"📊 Resultados da query refinada: {refined_result_data}")
+            return query, refined_result_data  # Retorna a query gerada e os dados encontrados no banco
+        
+    except Exception as e:
+        print(f"❌ Erro ao executar o processo: {e}")
+        return "Ocorreu um erro ao tentar processar sua solicitação."
