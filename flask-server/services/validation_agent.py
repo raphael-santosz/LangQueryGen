@@ -3,6 +3,14 @@ from langchain_community.utilities import SQLDatabase
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy.sql import text
 from utils.tools import extract_sql_query_from_response  # Importando a função de extração
+import json
+
+# Exemplos
+caminho_exemplos = './utils/exemplos.json'
+
+# Carregando os exemplos de queries de um arquivo JSON
+with open(caminho_exemplos, 'r') as file:
+    exemplos = json.load(file)["exemplos"]
 
 # Configurações do modelo e banco
 llm = ChatOllama(model="mistral", temperature=0)
