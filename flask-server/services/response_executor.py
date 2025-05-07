@@ -27,7 +27,7 @@ prompt = ChatPromptTemplate.from_messages([
 def generate_answer(user_question, query_results):
     # Verifica se os resultados estão vazios
     if not query_results:
-        return "Nenhum dado encontrado para a sua pergunta."
+        return "Desculpe, não encontramos resultados para a sua pergunta."
 
     # Formata os resultados da consulta de forma legível
     formatted_results = "\n".join([f"{k}: {v}" for row in query_results for k, v in row.items()])

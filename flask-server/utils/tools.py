@@ -1,22 +1,18 @@
-import re
+from langchain.schema import AIMessage
 
-def fix_capitalization_dynamic(query: str) -> str:
+def extract_sql_query_from_response(result) -> str:
     """
-    Corrige a capitalização de palavras-chave e nomes comuns de tabelas/colunas.
+    Função para extrair a query SQL da resposta da IA.
+    Se a resposta for um AIMessage, acessa o campo 'content'. 
+    Se for uma string simples, apenas aplica o 'strip' para limpar.
     """
-    keywords = ["SELECT", "FROM", "WHERE", "JOIN", "ON", "GROUP BY", "ORDER BY", "AND", "OR", "INNER", "LEFT", "RIGHT", "AS", "DESC", "ASC"]
-    for kw in keywords:
-        pattern = re.compile(rf'\b{kw.lower()}\b', re.IGNORECASE)
-        query = pattern.sub(kw, query)
-
-    # Exemplo de correção adicional (opcional)
-    substitutions = {
-        "funcionario": "Funcionario",
-        "nome": "Nome",
-        "salario": "Salario"
-    }
-    for original, corrected in substitutions.items():
-        pattern = re.compile(rf'\b{original}\b', re.IGNORECASE)
-        query = pattern.sub(corrected, query)
-
+    # Verifica se o resultado é uma instância de AIMessage
+    if isinstance(result, AIMessage):
+        query = result.content.strip()  # Acessa diretamente o conteúdo da mensagem e aplica strip
+    else:
+        query = result.strip()  # Caso contrário, trata como string simples
+    
+    if not query:
+        raise ValueError("❌ A resposta da IA não contém uma query SQL válida.")
+    
     return query

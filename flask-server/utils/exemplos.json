@@ -1,0 +1,25 @@
+{
+    "exemplos": [
+      {
+        "pergunta": "Qual o salário de João?",
+        "query": "SELECT Salario FROM Funcionario WHERE Nome = 'João'"
+      },
+      {
+        "pergunta": "Quais são os funcionários do departamento de TI?",
+        "query": "SELECT Nome FROM Funcionario WHERE Departamento = 'TI'"
+      },
+      {
+        "pergunta": "Quais são os funcionários com salário maior que 3000?",
+        "query": "SELECT Nome FROM Funcionario WHERE Salario > 3000"
+      },
+      {
+        "pergunta": "Quantos clientes existem na tabela?",
+        "query": "SELECT COUNT(*) FROM Clientes"
+      },
+      {
+        "pergunta": "Qual o total de vendas por produto?",
+        "query": "SELECT Produto, SUM(Vendas) FROM Vendas GROUP BY Produto"
+      }
+    ]
+  }
+  
