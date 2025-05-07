@@ -2,7 +2,6 @@ from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import LLMChain
 from sqlalchemy import text
-from utils.tools import fix_capitalization_dynamic
 from models.model import QueryRequest, QueryResponse
 from langchain_core.prompts import PromptTemplate
 from services.validation_agent import validate_and_refine_query  # IA2 chamada diretamente
@@ -86,12 +85,10 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
         # Se houve erro, passamos a consulta, o erro e o resultado para a IA2
         error_message = str(e)  # Capturando o erro como uma string para enviar à IA2
         
-        validation_result = validation_agent_executor.invoke({
-            "user_question": query_request.question,
-            "generated_query": raw_query,
-            "query_result": error_message  # Passando o erro para ajudar a IA2
-        })
-        print(f"🔧 Query refinada pela IA2 após erro: {validation_result}")
+                # Passando para IA2 com a função de validação e refinamento
+        refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, error_message)
+
+        print(f"🔧 Query refinada pela IA2 após erro: {refined_query}")
     
     # Agora, após a IA2 refinar a query, chamamos a IA3 para gerar a resposta natural
     answer = generate_answer(query_request.question, result_data)
