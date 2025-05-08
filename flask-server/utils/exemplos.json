@@ -19,7 +19,31 @@
       {
         "pergunta": "Qual o total de vendas por produto?",
         "query": "SELECT Produto, SUM(Vendas) FROM Vendas GROUP BY Produto"
-      }
+      },
+      {
+        "pergunta": "Quanto é o saldo de salário do Usuário1?",
+        "query": "SELECT (Salario/30) * DAY([DataDemissao]) AS SaldoSalario FROM [Funcionario] WHERE [Nome] = 'Usuário1'"
+      },
+      {
+        "pergunta": "Qual o valor do décimo terceiro proporcional do funcionário Carlos Almeida?",
+        "query": "select (Salario/12) * DATEDIFF(month, cast(dateadd(yy, datediff(yy, 0, GETDATE()), 0) as date), cast(getdate() as date)) AS DateDiff from Funcionario where nome = 'Carlos Almeida'"
+      },
+      {
+        "pergunta": "Qual o valor do FGTS total do funcionário João Gomes?",
+        "query": "select (Salario * 0.08) * DATEDIFF(month, DataAdmissao, cast(getdate() as date)) AS FGTS from Funcionario where nome = 'João Gomes'; "
+      },
+      {
+        "pergunta": "Qual o valor da multa de 40% do funcionário João Gomes?",
+        "query": "select 0.4 * (Salario * 0.08) * DATEDIFF(month, DataAdmissao, cast(getdate() as date)) AS FGTS from Funcionario where nome = 'João Gomes'; "
+      },
+      {
+        "pergunta": "Qual o valor da folha de pagamento total da empresa?",
+        "query": "select sum(Salario) as FolhaPagamento from Funcionario Where DataDemissao is Null"
+      },
+      {
+        "pergunta": "Qual a politica de ferias da empresa?",
+        "query": "select PoliticaDescricao as Politica from Politicas Where PoliticaNome like '%Ferias%'" 
+      }    
     ]
   }
   
