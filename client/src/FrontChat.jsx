@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Menu, PenSquare, ChevronUp, LogOut, User, LogOutIcon} from 'lucide-react';
+import { Menu, PenSquare, ChevronUp, LogOut, User, LogOutIcon } from 'lucide-react';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from './Services/FirebaseConfig.js';
@@ -53,8 +53,8 @@ export default function ChatInterface() {
       const response = await fetch("http://localhost:5000/generate-query", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json" },
-          // "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json" 
+        },
         body: JSON.stringify({ question: input, token: token}),
       });
 
@@ -98,6 +98,14 @@ export default function ChatInterface() {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Lógica para lidar com o arquivo, como envio para um servidor ou exibição
+      console.log('Arquivo enviado:', file);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
@@ -138,9 +146,7 @@ export default function ChatInterface() {
   
     setUserEmail(emailFromState || emailFromParams || '');
     setToken(tokenCryptFromState || '');
-
   }, [location]);
-
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 overflow-hidden font-sans">
@@ -214,6 +220,18 @@ export default function ChatInterface() {
         </div>
         <div className="p-4 bg-gray-800">
           <div className="max-w-3xl mx-auto flex items-center bg-gray-700 rounded-lg">
+            {/* Botão de anexar arquivo */}
+            <label htmlFor="file-upload" className="p-2 bg-gray-600 rounded-l-lg hover:bg-gray-500 cursor-pointer">
+              <span className="text-white">📎</span>
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e)}  // Função para lidar com o envio do arquivo
+              />
+            </label>
+
+            {/* Campo de entrada de texto */}
             <input
               type="text"
               value={input}

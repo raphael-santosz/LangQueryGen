@@ -33,8 +33,8 @@
         "query": "select (Salario * 0.08) * DATEDIFF(month, DataAdmissao, cast(getdate() as date)) AS FGTS from Funcionario where nome = 'João Gomes'; "
       },
       {
-        "pergunta": "Qual o valor da multa de 40% do funcionário João Gomes?",
-        "query": "select 0.4 * (Salario * 0.08) * DATEDIFF(month, DataAdmissao, cast(getdate() as date)) AS FGTS from Funcionario where nome = 'João Gomes'; "
+        "pergunta": "Qual o valor da multa de 40% do funcionário Carlos Almeida?",
+        "query": "SELECT 0.4 * (Salario * 0.08) * DATEDIFF(month, DataAdmissao, CAST(GETDATE() AS date)) AS MultaFGTS FROM Funcionario WHERE Nome = 'Carlos Almeida';"
       },
       {
         "pergunta": "Qual o valor da folha de pagamento total da empresa?",

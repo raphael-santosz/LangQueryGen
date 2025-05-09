@@ -14,7 +14,7 @@ Aqui estão os resultados da consulta que você executou:
 Com base nessas informações, por favor, gere uma resposta completa para a pergunta do usuário:
 {user_question}
 
-A resposta deve ser completa e natural, como se estivesse explicando os resultados de maneira acessível.
+A resposta deve ser completa e natural, sendo a resposta enviada no mesmo idioma que foi feita a pergunta, como se estivesse explicando os resultados de maneira acessível.
 """
 
 # Corrigindo a criação do prompt para aceitar um objeto PromptTemplate
