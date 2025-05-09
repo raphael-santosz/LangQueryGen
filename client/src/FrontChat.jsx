@@ -24,6 +24,7 @@ export default function ChatInterface() {
   const [token, setToken] = useState("");
   const location = useLocation();
   const [userEmail, setUserEmail] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null); // Estado para armazenar o nome do arquivo selecionado
 
   const handleRefresh = () => {
     if (messages.length > 0) {
@@ -42,27 +43,47 @@ export default function ChatInterface() {
   const navigate = useNavigate();
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    const newMessages = [...messages, { sender: "user", text: input }];
+    if (!input.trim() && !selectedFile) return; // Não envia se não houver texto nem arquivo
+  
+    // Criar a nova mensagem do usuário
+    let messageText = input;
+    if (selectedFile) {
+      messageText += `\nArquivo selecionado: ${selectedFile}`; // Adiciona o nome do arquivo à mensagem
+    }
+  
+    const newMessages = [...messages, { sender: "user", text: messageText }];
     setMessages(newMessages);
     setInput("");
+    setSelectedFile(null); // Limpa o arquivo selecionado após enviar a mensagem
     setIsTyping(true);
-
+  
+    // Verificar se um arquivo foi selecionado
+    const fileInput = document.getElementById("file-upload");
+    const file = fileInput.files[0];
+  
+    // Criar FormData para enviar a mensagem, o arquivo e o token
+    const formData = new FormData();
+    formData.append('question', input);
+    formData.append('token', token); // Adiciona o token ao FormData
+    if (file) {
+      formData.append('file', file);
+    }
+  
     try {
+      // Enviar a requisição POST para o backend com FormData
       const response = await fetch("http://localhost:5000/generate-query", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify({ question: input, token: token}),
+        body: formData, // Envia o FormData com a mensagem, token e arquivo
       });
-
+  
+      // Processar a resposta do servidor
       const result = await response.json();
       const outputValue = result.output || "Sem resposta recebida";
-
+  
       let visibleText = "";
       const fullText = outputValue;
+  
+      // Exibir a resposta do servidor no chat com animação de digitação
       const intervalId = setInterval(() => {
         if (visibleText.length < fullText.length) {
           visibleText += fullText[visibleText.length];
@@ -71,13 +92,13 @@ export default function ChatInterface() {
           clearInterval(intervalId);
           setIsTyping(false);
         }
-      }, 50);
-
+      }, 50); // Intervalo de animação de 50ms para cada letra
+  
     } catch (error) {
-      console.error("Error enviando a mensagem:", error);
-      setIsTyping(false);
+      console.error("Erro enviando a mensagem:", error);
+      setIsTyping(false); // Parar a animação caso ocorra um erro
     }
-  };
+  };  
 
   const loadConversation = (id) => {
     const conversation = conversations.find(conv => conv.id === id);
@@ -101,8 +122,7 @@ export default function ChatInterface() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Lógica para lidar com o arquivo, como envio para um servidor ou exibição
-      console.log('Arquivo enviado:', file);
+      setSelectedFile(file.name); // Armazena o nome do arquivo selecionado
     }
   };
 
@@ -219,36 +239,41 @@ export default function ChatInterface() {
           </div>
         </div>
         <div className="p-4 bg-gray-800">
-          <div className="max-w-3xl mx-auto flex items-center bg-gray-700 rounded-lg">
-            {/* Botão de anexar arquivo */}
-            <label htmlFor="file-upload" className="p-2 bg-gray-600 rounded-l-lg hover:bg-gray-500 cursor-pointer">
-              <span className="text-white">📎</span>
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                onChange={(e) => handleFileUpload(e)}  // Função para lidar com o envio do arquivo
-              />
-            </label>
+        <div className="max-w-3xl mx-auto flex items-center bg-gray-700 rounded-lg">
+          {/* Exibir o nome do arquivo selecionado */}
+          {selectedFile && (
+            <span className="text-white mr-4">Arquivo selecionado: {selectedFile}</span>
+          )}
 
-            {/* Campo de entrada de texto */}
+          {/* Botão de anexar arquivo */}
+          <label htmlFor="file-upload" className="p-2 bg-gray-600 rounded-l-lg hover:bg-gray-500 cursor-pointer">
+            <span className="text-white">📎</span>
             <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Escreva sua dúvida ..."
-              className="flex-1 p-3 bg-transparent text-white focus:outline-none"
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              type="file"
+              id="file-upload"
+              className="hidden"
+              onChange={(e) => handleFileUpload(e)}  // Função para lidar com o envio do arquivo
             />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim()}
-              className="p-2 bg-white rounded-r-lg hover:bg-gray-400 cursor-pointer"
-            >
-              <ChevronUp size={24} className="text-gray-800" />
-            </button>
-          </div>
+          </label>
+
+          {/* Campo de entrada de texto */}
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Escreva sua dúvida ..."
+            className="flex-1 p-3 bg-transparent text-white focus:outline-none"
+            onKeyPress={(e) => e.key === "Enter" && sendMessage()} // Enviar mensagem ao pressionar "Enter"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() && !selectedFile} // Desabilita o botão se não houver texto nem arquivo
+            className="p-2 bg-white rounded-r-lg hover:bg-gray-400 cursor-pointer"
+          >
+            <ChevronUp size={24} className="text-gray-800" />
+          </button>
         </div>
+      </div>
       </main>
     </div>
   );

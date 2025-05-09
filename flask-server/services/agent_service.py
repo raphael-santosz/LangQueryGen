@@ -51,63 +51,69 @@ chain = LLMChain(llm=llm, prompt=prompt)
 
 def run_query_agent(query_request: QueryRequest) -> QueryResponse:
     try:
-        # Geração da consulta SQL com base na pergunta
+        print("Iniciando a geração da consulta SQL...")
+
         result = chain.invoke({
             "input": query_request.question,
             "table_info": db.get_table_info(),
             "top_k": 20,
-            "exemplos_string": exemplos_string  # Passando os exemplos para o modelo
+            "exemplos_string": exemplos_string
         })
 
+        print("Consulta SQL gerada com sucesso.")
         text_response = result["text"]
 
-        # Extração da query SQL da resposta usando a função nova
+        print("Extraindo a consulta SQL da resposta...")
         raw_query = extract_sql_query_from_response(text_response)
+        print(f"Consulta extraída: {raw_query}")
 
-        # Execução da consulta no banco de dados
+        print("Executando a consulta no banco de dados...")
         with db._engine.connect() as conn:
             result = conn.execute(text(raw_query)).fetchall()
             result_data = [
                 {k: str(v) for k, v in row._mapping.items()}
                 for row in result
             ]
-        
-        # Passando para IA2 com a função de validação e refinamento
+        print("Consulta executada com sucesso no banco de dados.")
+
+        print("Passando para a IA2 para validação e refinamento...")
         try:
             refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, result_data)
+            print("Consultas refinadas pela IA2.")
         except Exception as e:
             print(f"❌ Erro ao executar o processo na IA2: {e}")
-            # Caso a IA2 falhe, envia a mensagem de erro de forma mais clara
             refined_query, refined_result_data = None, []
-            # Geração da resposta natural baseada nos resultados da consulta refinada ou original
-        answer = generate_answer(query_request.question, refined_result_data)
-        print(f"📝 Resposta gerada pelo modelo: {answer}")
+
+        # Geração da resposta com os dados refinados, mas agora controlamos os prints
+        if refined_result_data:
+            answer = generate_answer(query_request.question, refined_result_data)
+        else:
+            error_message = "Não foi possível gerar uma resposta devido a falhas no refinamento da consulta ou na execução no banco de dados."
+            refined_result_data = [error_message]
+            answer = generate_answer(query_request.question, refined_result_data)
+
+        # Imprimir a resposta gerada apenas uma vez, ao final do processo
+        print(f"📝 Resposta final gerada pelo modelo: {answer}")
 
     except Exception as e:
         print(f"❌ Erro ao executar a consulta, enviando para IA2 para validação e refinamento: {e}")
-        # Se houve erro, passamos a consulta, o erro e o resultado para a IA2
-        error_message = str(e)  # Capturando o erro como uma string para enviar à IA2
+        error_message = str(e)
 
         try:
             refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, error_message)
+            print("Erro refinado pela IA2.")
         except Exception as e:
             print(f"❌ Erro ao executar o processo na IA2: {e}")
-            # Caso a IA2 falhe, envia a mensagem de erro de forma mais clara
             refined_query, refined_result_data = None, []
-    
-        # Agora, após a IA2 refinar a query, chamamos a IA3 para gerar a resposta natural
-    if refined_result_data:  # Se a IA2 conseguiu refinar a query corretamente
-        answer = generate_answer(query_request.question, refined_result_data)
-    else:  # Caso contrário, passamos a mensagem de erro que a IA2 falhou
-        # Mensagem informando que a consulta não pôde ser processada
-        error_message = "Não foi possível gerar uma resposta devido a falhas no refinamento da consulta ou na execução no banco de dados."
-        
-        # Passando a mensagem de erro para a IA3 refinar a resposta
-        refined_result_data = [error_message]  # Em vez de deixar vazio, definimos uma mensagem clara
-        
-        # Gerando a resposta com a mensagem de erro
-        answer = generate_answer(query_request.question, refined_result_data)
 
-    print(f"📝 Resposta gerada pelo modelo: {answer}")
+        # Geração da resposta final em caso de erro
+        if refined_result_data:
+            answer = generate_answer(query_request.question, refined_result_data)
+        else:
+            error_message = "Não foi possível gerar uma resposta devido a falhas no refinamento da consulta ou na execução no banco de dados."
+            refined_result_data = [error_message]
+            answer = generate_answer(query_request.question, refined_result_data)
+
+        print(f"📝 Resposta final gerada pelo modelo: {answer}")
 
     return {"output": answer}
