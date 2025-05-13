@@ -10,7 +10,7 @@ from utils.tools import extract_sql_query_from_response  # Função de extraçã
 import json
 
 # Configuração do banco
-database_uri = "mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
+database_uri = "mssql+pyodbc://@DESKTOP-P4NVCOE\\SQLEXPRESS/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
 db = SQLDatabase.from_uri(database_uri)
 
 # Exemplos
