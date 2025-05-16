@@ -12,6 +12,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+console.log('API Key:', process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app); // Exporta o Firestore
