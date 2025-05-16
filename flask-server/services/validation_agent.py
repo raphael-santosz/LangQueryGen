@@ -1,14 +1,9 @@
-from langchain_ollama import ChatOllama 
+from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
-from langchain.chains import LLMChain
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy.sql import text
-from utils.tools import extract_sql_query_from_response  # Função de extração de SQL
+from utils.tools import extract_sql_query_from_response  # Importando a função de extração
 import json
-
-# Configurações do modelo e banco
-llm = ChatOllama(model="mistral", temperature=0)
-db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
 
 # Exemplos
 caminho_exemplos = './utils/exemplos.json'
@@ -17,51 +12,37 @@ caminho_exemplos = './utils/exemplos.json'
 with open(caminho_exemplos, 'r') as file:
     exemplos = json.load(file)["exemplos"]
 
-# Formatar os exemplos como uma lista de strings
-exemplos_string = "\n".join([f"- {exemplo['pergunta']} => {exemplo['query']}" for exemplo in exemplos])
-
-# Prompt
-template = """Given an input question, generate a syntactically correct SQL query for SQL Server.
-Use the following table info: {table_info}
-Consider at most {top_k} relevant tables.
-Question: {input}
-Examples to base your queries: 
-{exemplos_string}
-
-Before generating the query, carefully review the provided examples to ensure the query matches the patterns in these examples. Pay special attention to any similar questions and their corresponding queries.
-
-When generating the query, make sure to follow SQL Server conventions, especially for calculations like FGTS, salary, and date-related operations (e.g., use DATEDIFF, DATEADD, CAST, etc.).
-
-Respond only with the SQL query without any additional explanation.
-"""
-
-# Criando o prompt a partir do template
-prompt = PromptTemplate(
-    input_variables=["input", "top_k", "table_info", "exemplos_string"],
-    template=template
-)
-
-# Cadeia
-chain = LLMChain(llm=llm, prompt=prompt)
+# Configurações do modelo e banco
+llm = ChatOllama(model="mistral", temperature=0)
+db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
 
 def validate_and_refine_query(user_question: str, generated_query: str, query_results: list) -> str:
     """
-    Recebe a pergunta do usuário e a query gerada pela IA1. Verifica se a query é adequada
-    e a refina se necessário, retornando uma nova query refinada.
+    Recebe a pergunta do usuário, a query gerada pela IA1 e os resultados da consulta ao banco.
+    Verifica se a query é adequada e a refina se necessário, retornando uma nova query refinada.
     """
+    # Prompt para validar e ajustar a query
+    template = """
+    A partir da seguinte pergunta do usuário: {user_question}, temos a seguinte query SQL gerada: {generated_query}. 
+    Os resultados da consulta ao banco de dados foram: {query_results}.
+    O objetivo é verificar se a query gerada responde de forma correta e precisa à pergunta do usuário, considerando os resultados do banco.      
+    Se necessário, faça ajustes e refinações na query para torná-la mais adequada, sem alterar seu sentido original.
+    
+    Retorne apenas a query SQL gerada ou ajustada, sem a necessidade de explicar sua validade.
+    """
+    
+    prompt = PromptTemplate(input_variables=["user_question", "generated_query", "query_results"], template=template)
+    
     # Formatação do prompt
-    formatted_prompt = prompt.format(
-        input=user_question, 
-        top_k=20,  # Ajuste conforme necessário
-        table_info=db.get_table_info(),
-        exemplos_string=exemplos_string
-    )
+    formatted_prompt = prompt.format(user_question=user_question, generated_query=generated_query, query_results=query_results)
+    
+    print(f"🔍 Antes de chamar invoke: {formatted_prompt}")  
     
     try:
         # Chama o modelo para executar a query gerada ou ajustada
         result = llm.invoke(formatted_prompt)
+        print(f"🔍 Resultado após invoke: {result}")
         
-        # Extração da query SQL da resposta
         query = extract_sql_query_from_response(result)
         
         # Executando a consulta no banco de dados
@@ -74,8 +55,10 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
             
             # Se não houver resultados, passamos a mensagem para a IA3
             if not refined_result_data:
+                print("⚠️ A IA2 não retornou resultados para a query gerada. Passando para a IA3...")
                 return "Não foi possível encontrar dados relacionados à sua pergunta."
 
+            print(f"📊 Resultados da query refinada: {refined_result_data}")
             return query, refined_result_data  # Retorna a query gerada e os dados encontrados no banco
         
     except Exception as e:
