@@ -6,20 +6,14 @@ from models.model import QueryRequest, QueryResponse
 from utils.tools import extract_sql_query_from_response  # Função de extração de SQL
 import json
 from sqlalchemy import text
+from utils.tools import carregar_exemplos_string
 
 # Configuração do banco de dados (se necessário)
 database_uri = "mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server"
 db = SQLDatabase.from_uri(database_uri)
 
 # Exemplos
-caminho_exemplos = './utils/exemplos.json'
-
-# Carregando os exemplos de queries de um arquivo JSON
-with open(caminho_exemplos, 'r') as file:
-    exemplos = json.load(file)["exemplos"]
-
-# Formatar os exemplos como uma lista de strings
-exemplos_string = "\n".join([f"- {exemplo['pergunta']} => {exemplo['query']}" for exemplo in exemplos])
+exemplos_string = carregar_exemplos_string('utils/exemplos.json')
 
 # Modelo
 llm = ChatOllama(model="mistral", temperature=0)
@@ -79,5 +73,8 @@ def generate_sql_query(query_request: QueryRequest) -> QueryResponse:
         return {"query": raw_query, "result_data": result_data}
 
     except Exception as e:
-        print(f"❌ Erro ao gerar a consulta SQL na IA1: {e}")
-        raise Exception("Erro ao gerar a consulta SQL na IA1.")
+        print(f"❌ Erro ao executar o processo: {e}")
+        # Em vez de retornar uma string no segundo elemento, retorne uma lista com um dicionário de erro
+        error_message = "Ocorreu um erro ao tentar processar sua solicitação."
+        error_data = [{"error": error_message}]
+        return raw_query, error_data

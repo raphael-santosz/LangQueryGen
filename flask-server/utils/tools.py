@@ -41,3 +41,31 @@ def extract_text_from_file(file_path: str) -> str:
         return extract_text_from_word(file_path)
     else:
         raise ValueError("Formato de arquivo não suportado.")
+    
+import json
+from pathlib import Path
+
+def carregar_exemplos_string(caminho_exemplos: str = None) -> str:
+    """
+    Lê o arquivo JSON de exemplos e formata a string para uso nos prompts.
+    :param caminho_exemplos: caminho para o arquivo JSON de exemplos. 
+                             Se None, usa o caminho padrão './utils/exemplos.json'
+    :return: string formatada com exemplos prontos para injeção em prompts.
+    """
+    if caminho_exemplos is None:
+        # Caminho padrão relativo à raiz do projeto
+        caminho_exemplos = Path(__file__).parent.parent / 'utils' / 'exemplos.json'
+    else:
+        caminho_exemplos = Path(caminho_exemplos)
+
+    try:
+        with open(caminho_exemplos, 'r', encoding='utf-8') as f:
+            dados = json.load(f)
+            exemplos = dados.get("exemplos", [])
+    except Exception as e:
+        print(f"Erro ao carregar exemplos JSON: {e}")
+        return ""
+
+    # Formata a lista de exemplos no padrão esperado
+    exemplos_string = "\n".join([f"- {exemplo['pergunta']} => {exemplo['query']}" for exemplo in exemplos])
+    return exemplos_string

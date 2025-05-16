@@ -100,7 +100,8 @@
     "howCanIHelp": "How can I help you today?",
     "openConversations": "Open previous conversations",
     "noConversations": "No previous conversations",
-    "previousConversations": "Previous Conversations"
+    "previousConversations": "Previous Conversations",
+    "requestError": "Failed to send message."
   },
   "LanguageSwitcher": {
     "english": "English",
