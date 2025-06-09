@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, PenSquare, ChevronUp, LogOut, User, Plus } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import type { LucideProps } from 'lucide-react';
 
 // Tipagem para as mensagens
@@ -32,13 +33,13 @@ interface IconButtonProps {
 }
 
 // Componente IconButton
-const IconButton: React.FC<IconButtonProps> = ({ icon: Icon, onClick, className, ariaLabel }) => (
+const IconButton: React.FC<IconButtonProps & { size?: number }> = ({ icon: Icon, onClick, className, ariaLabel, size = 20 }) => (
   <button
     onClick={onClick}
     className={`p-2 rounded-lg transition-colors ${className} hover:bg-gray-500 focus:outline-none`}
     aria-label={ariaLabel}
   >
-    <Icon size={20} className="text-white" />
+    <Icon size={size} className="text-white" />
   </button>
 );
 
@@ -63,6 +64,42 @@ export default function ChatInterface() {
 
   const [token, setToken] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userPosition, setUserPosition] = useState<string>('');
+
+  // Carregar e-mail, position do usuário logado e token
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+      if (user) {
+        setUserEmail(user.email || t('user', { defaultMessage: 'User' }));
+        user.getIdToken().then((idToken) => setToken(idToken)).catch((error) => {
+          console.error('Erro ao obter token:', error);
+          setError(t('authError', { defaultMessage: 'Authentication error.' }));
+        });
+
+        // Buscar o campo position do Firestore
+        const fetchUserPosition = async () => {
+          try {
+            const userDocRef = doc(db, 'Users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              setUserPosition(data.position || t('unknownPosition', { defaultMessage: 'Unknown' }));
+            } else {
+              setUserPosition(t('unknownPosition', { defaultMessage: 'Unknown' }));
+            }
+          } catch (error) {
+            console.error('Erro ao buscar position do usuário:', error);
+            setError(t('firestoreError', { defaultMessage: 'Error fetching user data.' }));
+          }
+        };
+        fetchUserPosition();
+      } else {
+        // Redirecionar para login se não houver usuário autenticado
+        router.push(`/${locale}/login`);
+      }
+    });
+    return () => unsubscribe();
+  }, [router, locale, t]);
 
   // Carregar conversas do localStorage apenas no cliente
   useEffect(() => {
@@ -120,7 +157,7 @@ export default function ChatInterface() {
     `;
     document.head.appendChild(style);
     return () => {
-      document.head.removeChild(style); // Correção anterior mantida
+      document.head.removeChild(style);
     };
   }, []);
 
@@ -303,13 +340,13 @@ export default function ChatInterface() {
             )}
           </div>
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
-            <User size={20} className="mr-2 text-white" />
-            <button
+            <IconButton
+              icon={User}
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="text-sm text-white hover:text-gray-200 transition-colors"
-            >
-              {userEmail || t('user', { defaultMessage: 'User' })}
-            </button>
+              ariaLabel={"Default"}
+              className="text-white"
+              size={25}
+            />
             {isUserMenuOpen && (
               <motion.div
                 className="absolute top-12 right-0 z-10 w-48 bg-white rounded-lg shadow-lg border border-gray-200"
@@ -318,9 +355,17 @@ export default function ChatInterface() {
                 animate="visible"
               >
                 <div className="p-4">
+                  <div className="flex flex-col mb-4">
+                    <span className="text-sm text-gray-900">
+                      {userEmail || t('user', { defaultMessage: 'User' })}
+                    </span>
+                    {/* <span className="text-xs text-gray-500 text-right">
+                      {userPosition || t('unknownPosition', { defaultMessage: 'Unknown' })}
+                    </span> */}
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors w-full text-left"
+                    className="flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors w-full"
                   >
                     <LogOut size={20} />
                     <span>{t('logout', { defaultMessage: 'Logout' })}</span>
@@ -345,10 +390,10 @@ export default function ChatInterface() {
                 >
                   <div
                     className={`inline-block p-3 rounded-lg shadow-sm ${message.isWelcome
-                        ? 'text-center text-xl font-semibold text-gray-900 bg-transparent shadow-none'
-                        : message.sender === 'user'
-                          ? 'bg-black text-white'
-                          : 'bg-white text-gray-900'
+                      ? 'text-center text-xl font-semibold text-gray-900 bg-transparent shadow-none'
+                      : message.sender === 'user'
+                        ? 'bg-black text-white'
+                        : 'bg-white text-gray-900'
                       }`}
                   >
                     {message.text}
