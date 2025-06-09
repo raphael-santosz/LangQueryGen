@@ -47,3 +47,5 @@ ollama-models/
 *.bak
 *.tmp
 *.log
+
+flask-server/uploads/

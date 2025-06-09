@@ -4,9 +4,9 @@ from langchain.chains import LLMChain
 from sqlalchemy import text
 from models.model import QueryRequest, QueryResponse
 from langchain_core.prompts import PromptTemplate
-from services.validation_agent import validate_and_refine_query  # IA2 chamada diretamente
-from services.response_executor import generate_answer
-from services.ai1 import generate_sql_query
+from services.validateQuery_agent import validate_and_refine_query  # IA2 chamada diretamente
+from services.response_agent import generate_answer
+from services.primaryQuery_agent import generate_sql_query
 from utils.tools import extract_sql_query_from_response  # Função de extração de SQL
 import json
 
