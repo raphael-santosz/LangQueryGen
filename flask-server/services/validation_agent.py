@@ -8,7 +8,7 @@ import json
 
 # Configurações do modelo e banco
 llm = ChatOllama(model="mistral", temperature=0)
-db = SQLDatabase.from_uri("mssql+pyodbc://@DESKTOP-P4NVCOE\\SQLEXPRESS/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
+db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
 
 # Exemplos
 caminho_exemplos = './utils/exemplos.json'
