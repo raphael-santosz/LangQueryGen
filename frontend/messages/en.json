@@ -102,6 +102,7 @@
     "noConversations": "No previous conversations",
     "previousConversations": "Previous Conversations",
     "invalidFileType": "Only PDF, DOCX, TXT, MD, and RTF files are allowed."
+
   },
   "LanguageSwitcher": {
     "english": "English",
