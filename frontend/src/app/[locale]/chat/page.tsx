@@ -175,13 +175,30 @@ export default function ChatInterface() {
     setSelectedFiles([]);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const fileArray = Array.from(files);
-      setSelectedFiles((prev) => [...prev, ...fileArray]);
+const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const allowedTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/rtf',
+    'text/rtf',
+    'text/plain',
+  ];
+  const allowedExtensions = ['.pdf', '.docx', '.txt', '.md', '.rtf'];
+  const files = event.target.files;
+  if (files) {
+    const fileArray = Array.from(files);
+    const validFiles = fileArray.filter((file) => {
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      return allowedTypes.includes(file.type) || allowedExtensions.includes(extension);
+    });
+
+    if (validFiles.length < fileArray.length) {
+      alert(t('invalidFileType', { defaultValue: 'Only PDF, DOCX, TXT, MD, and RTF files are allowed.' }));
     }
-  };
+
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+  }
+};
 
   const sendMessage = async () => {
     console.log('Enviando mensagem - Token:', token);
