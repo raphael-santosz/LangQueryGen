@@ -100,7 +100,8 @@
     "howCanIHelp": "¿Cómo puedo ayudarte hoy?",
     "openConversations": "Abrir conversaciones anteriores",
     "noConversations": "No hay conversaciones anteriores",
-    "previousConversations": "Conversaciones anteriores"
+    "previousConversations": "Conversaciones anteriores",
+    "invalidFileType": "Solo se permiten archivos PDF, DOCX, TXT, MD y RTF."
   },
   "LanguageSwitcher": {
     "english": "Inglés",

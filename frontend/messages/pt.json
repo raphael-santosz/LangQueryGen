@@ -101,7 +101,7 @@
     "openConversations": "Abrir conversas anteriores",
     "noConversations": "Sem conversas anteriores",
     "previousConversations": "Conversas Anteriores",
-    "requestError": "Falha ao enviar mensagem."
+    "invalidFileType": "Somente arquivos PDF, DOCX, TXT, MD e RTF são permitidos."
   },
   "LanguageSwitcher": {
     "english": "Inglês",
