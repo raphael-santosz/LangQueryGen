@@ -83,13 +83,6 @@ All LLM interactions are **local and secure**, ensuring full data privacy.
 
 ---
 
-## ✨ Authors
-
-Developed by **Raphael Augusto Santos**  and **Rafael Azzolini**\
-[GitHub](https://github.com/raphael-santosz)
-
----
-
 ## 🗜️ General System Architecture
 
 ```mermaid
@@ -186,3 +179,8 @@ flowchart TD
 🚀 **Ready for production or to be extended with other databases / models / UIs.**
 
 ---
+
+## ✨ Authors
+
+Developed by **Raphael Augusto Santos**  and **Rafael Azzolini**\
+[GitHub](https://github.com/raphael-santosz)
