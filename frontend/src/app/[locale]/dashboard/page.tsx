@@ -15,8 +15,6 @@ import {
   ArrowRightFromLineIcon,
   SearchIcon,
 } from 'lucide-react';
-
-// Tipagem para os ícones do lucide-react
 import type { LucideProps } from 'lucide-react';
 
 interface User {
@@ -27,7 +25,6 @@ interface User {
   tokenKey?: string;
 }
 
-// Tipagem para as props do MenuItem
 interface MenuItemProps {
   icon: React.ComponentType<LucideProps>;
   text: string;
@@ -35,11 +32,11 @@ interface MenuItemProps {
   onClick: () => void;
 }
 
-// Componente MenuItem com tipagem explícita
 const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, text, isActive, onClick }) => (
   <li
-    className={`flex items-center space-x-2 px-4 py-2 rounded-lg cursor-pointer ${isActive ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200'
-      }`}
+    className={`flex items-center space-x-2 px-4 py-2 rounded-lg cursor-pointer ${
+      isActive ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-200'
+    }`}
     onClick={onClick}
   >
     <Icon className="h-5 w-5" />
@@ -115,7 +112,6 @@ export default function DashboardPage() {
     }
   }, [isInitialLoad, initialFilter, user]);
 
-  // Filtra os usuários com base na busca
   useEffect(() => {
     const filtered = users.filter(
       (user) =>
@@ -127,7 +123,6 @@ export default function DashboardPage() {
     setCurrentPage(1);
   }, [searchTerm, searchPosition, users]);
 
-  // Função para atualizar a posição do usuário
   const updateUserPosition = async (userId: string, newPosition: string) => {
     try {
       const userRef = doc(db, 'Users', userId);
@@ -137,9 +132,7 @@ export default function DashboardPage() {
 
       setUsers(
         users.map((user) =>
-          user.id === userId
-            ? { ...user, position: newPosition }
-            : user
+          user.id === userId ? { ...user, position: newPosition } : user
         )
       );
       setEditingUser(null);
@@ -148,7 +141,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Função de logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -160,7 +152,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Função para acessar o chat
   const handleChangeChat = async () => {
     const validLocales = ['en', 'pt', 'es'];
     const targetLocale = validLocales.includes(locale) ? locale : 'en';
@@ -172,7 +163,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Renderização do conteúdo
   const renderContent = () => {
     switch (activeItem) {
       case t('Users'):
@@ -184,8 +174,10 @@ export default function DashboardPage() {
                   type="text"
                   name="searchTerm"
                   id="searchTerm"
-                  className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 transition duration-200 pl-10"
-                  placeholder={t('Dashboard.searchPlaceholderIfExists', { defaultMessage: 'Search users...' })}
+                  className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-900 transition duration-200 pl-10"
+                  placeholder={t('Dashboard.searchPlaceholderIfExists', {
+                    defaultMessage: 'Search users...',
+                  })}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -194,7 +186,7 @@ export default function DashboardPage() {
               <select
                 id="searchPosition"
                 name="searchPosition"
-                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 transition duration-200"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-gray-900 transition duration-200"
                 value={searchPosition}
                 onChange={(e) => {
                   setSearchPosition(e.target.value);
@@ -209,25 +201,27 @@ export default function DashboardPage() {
               </select>
             </div>
             {dashboardLoading ? (
-              <p className="text-gray-700">{t('Dashboard.loadingUsersIfExists', { defaultMessage: 'Loading users...' })}</p>
+              <p className="text-gray-700">
+                {t('Dashboard.loadingUsersIfExists', { defaultMessage: 'Loading users...' })}
+              </p>
             ) : (
               <>
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-300">
                   <thead>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         {t('Dashboard.nameIfExists', { defaultMessage: 'Name' })}
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         {t('Dashboard.emailIfExists', { defaultMessage: 'Email' })}
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         {t('Dashboard.positionIfExists', { defaultMessage: 'Position' })}
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"></th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-300">
                     {filteredUsers
                       .slice((currentPage - 1) * 10, currentPage * 10)
                       .map((user) => (
@@ -240,12 +234,13 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.position === 'Main-admin'
-                                ? 'bg-purple-100 text-purple-800'
-                                : user.position === 'Gestor'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-green-100 text-green-800'
-                                }`}
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                user.position === 'Main-admin'
+                                  ? 'bg-red-100 text-red-600'
+                                  : user.position === 'Gestor'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
                             >
                               {user.position}
                             </span>
@@ -254,60 +249,54 @@ export default function DashboardPage() {
                             <div className="relative">
                               <button
                                 onClick={() =>
-                                  setEditingUser(
-                                    editingUser === user.id ? null : user.id
-                                  )
+                                  setEditingUser(editingUser === user.id ? null : user.id)
                                 }
                                 className="text-gray-500 hover:text-gray-900 transition-colors"
                               >
                                 <MoreVerticalIcon className="h-5 w-5" />
                               </button>
                               {editingUser === user.id && (
-                                <div className="absolute right-0 z-10 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-gray-200">
+                                <div className="absolute right-0 z-10 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-gray-300">
                                   <div
                                     className="py-1"
                                     role="menu"
                                     aria-orientation="vertical"
                                     aria-labelledby="options-menu"
                                   >
-                                    {['Funcionário', 'Gestor', 'Main-admin'].map(
-                                      (position) => (
-                                        <button
-                                          key={position}
-                                          onClick={() =>
-                                            updateUserPosition(user.id, position)
-                                          }
-                                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                          role="menuitem"
-                                        >
-                                          {position}
-                                          {user.position === position && (
-                                            <CheckIcon className="h-4 w-4 inline-block ml-2" />
-                                          )}
-                                        </button>
-                                      )
-                                    )}
+                                    {['Funcionário', 'Gestor', 'Main-admin'].map((position) => (
+                                      <button
+                                        key={position}
+                                        onClick={() => updateUserPosition(user.id, position)}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 hover:text-gray-900"
+                                        role="menuitem"
+                                      >
+                                        {position}
+                                        {user.position === position && (
+                                          <CheckIcon className="h-4 w-4 inline-block ml-2" />
+                                        )}
+                                      </button>
+                                    ))}
                                   </div>
                                 </div>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                   </tbody>
                 </table>
                 <div className="mt-4 flex justify-between">
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50"
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50"
                   >
                     {t('Dashboard.previousIfExists', { defaultMessage: 'Previous' })}
                   </button>
                   <button
                     onClick={() => setCurrentPage((prev) => prev + 1)}
                     disabled={currentPage * 10 >= filteredUsers.length}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50"
+                    className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 disabled:opacity-50"
                   >
                     {t('Dashboard.nextIfExists', { defaultMessage: 'Next' })}
                   </button>
@@ -322,7 +311,11 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <div className="text-gray-700">{t('Dashboard.loadingIfExists', { defaultMessage: 'Loading...' })}</div>;
+    return (
+      <div className="text-gray-700">
+        {t('Dashboard.loadingIfExists', { defaultMessage: 'Loading...' })}
+      </div>
+    );
   }
 
   if (!user) {
@@ -333,7 +326,9 @@ export default function DashboardPage() {
     <div className="flex min-h-screen bg-gray-100 text-gray-900">
       <aside className="hidden md:flex flex-col w-64 bg-white shadow-lg">
         <div className="p-4">
-          <h1 className="text-2xl font-bold text-gray-900">{t('Dashboard.adminPanelIfExists', { defaultMessage: 'Admin Panel' })}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t('Dashboard.adminPanelIfExists', { defaultMessage: 'Admin Panel' })}
+          </h1>
         </div>
         <nav className="flex-1">
           <ul className="space-y-2 py-4">
@@ -353,10 +348,10 @@ export default function DashboardPage() {
             ))}
           </ul>
         </nav>
-        <div className="p-6 mt-auto pt-8 border-t border-gray-200">
+        <div className="p-6 mt-auto pt-8 border-t border-gray-300">
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-2 text-red-500 hover:text-red-600 transition-colors"
+            className="flex items-center space-x-2 text-red-600 hover:text-red-700 transition-colors"
           >
             <LogOutIcon className="h-5 w-5" />
             <span>{t('Dashboard.logoutIfExists', { defaultMessage: 'Logout' })}</span>
@@ -366,7 +361,9 @@ export default function DashboardPage() {
       <main className="flex-1 p-8 overflow-auto">
         <h2 className="text-3xl font-semibold mb-4 text-gray-900">{activeItem}</h2>
         {isInitialLoad ? (
-          <p className="text-gray-700">{t('Dashboard.loadingInitialDataIfExists', { defaultMessage: 'Loading initial data...' })}</p>
+          <p className="text-gray-700">
+            {t('Dashboard.loadingInitialDataIfExists', { defaultMessage: 'Loading initial data...' })}
+          </p>
         ) : activeItem === t('Users') ? (
           renderContent()
         ) : null}
