@@ -96,9 +96,10 @@ Developed by **Raphael Augusto Santos** and **Rafael Azzolini**
 flowchart TD
     U[User sends question] --> IA1
     IA1 -->|Generates raw_query + result_data/tag| IA2
-    IA2 -->|Validates/Refines query| IA2fallback{Error?}
-    IA2fallback -->|Yes| IA2  
-    IA2fallback -->|No| IA3
+    IA2 -->|Validates/Refines query| Check{IA2 Error?}
+    Check -->|Yes| IA2Retry[IA2 retries refinement]
+    Check -->|No| IA3
+    IA2Retry -->|Refined again| IA3
     IA3 -->|Natural language response| U
 ```
 
