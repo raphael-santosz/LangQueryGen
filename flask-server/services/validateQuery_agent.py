@@ -2,7 +2,7 @@ from langchain_ollama import ChatOllama
 from langchain_community.utilities import SQLDatabase
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy.sql import text
-from utils.tools import extract_sql_query_from_response  # Importando a função de extração
+from utils.tools import extract_sql_query_from_response, get_relevant_table_info  # Importando a função de extração
 import json
 from utils.tools import carregar_exemplos_string
 
@@ -15,7 +15,7 @@ db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connecti
 
 def validate_and_refine_query(user_question: str, generated_query: str, query_results: list) -> tuple:
     # Captura a estrutura da base de dados dinamicamente
-    table_info = db.get_table_info()
+    table_info = get_relevant_table_info(db)
     query = None
 
     template = """
@@ -35,13 +35,26 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
     {query_results}
 
     ### TASK
-    You must verify whether the GENERATED QUERY correctly answers the USER QUESTION, considering the QUERY RESULTS and the DATABASE SCHEMA.
-    If necessary, adjust and refine the query to make it more accurate, without changing the original intent of the USER QUESTION.
+    You must act as a validation agent for the GENERATED QUERY, comparing it with the USER QUESTION and the DATABASE SCHEMA.
+
+    Your goal is to verify whether the GENERATED QUERY semantically and completely answers the USER QUESTION.
+
+    ### RULES
+    - If the GENERATED QUERY is semantically coherent and fully answers the USER QUESTION, you can return it as is or make minor corrections.
+    - If the GENERATED QUERY does not match the intent of the USER QUESTION (for example: asking about hiring date but returning salary or FGTS), you MUST generate a new SQL query that properly answers the USER QUESTION.
+    - If it is impossible to generate a valid query based on the USER QUESTION and DATABASE SCHEMA, you MUST return an empty string.
 
     ### IMPORTANT
-    - Return ONLY the final SQL query. Do NOT provide explanations or comments.
-    - Do NOT use columns or tables that are not present in the DATABASE SCHEMA section.
+    - You are allowed to change or replace the GENERATED QUERY if necessary.
+    - You MUST NOT transform a question about one concept (e.g. FGTS) into a query about another concept (e.g. salary), unless the USER QUESTION clearly asks for it.
+    - You MUST NOT invent columns or tables not present in the DATABASE SCHEMA.
+    - You MUST NOT simplify necessary calculations, but you can correct incorrect ones.
+    - You MUST NOT provide explanations or comments — return ONLY the final SQL query (or an empty string if not possible).
     - The output must be ONLY the SQL query, with no leading or trailing text.
+
+    ### FINAL QUERY
+    Return ONLY a valid SQL SELECT query, or an empty string if not possible. Do not add any explanation, markdown, or comments.
+
     """
     
     prompt = PromptTemplate(
@@ -62,9 +75,9 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
         query = None  # ← inicializa aqui
         # Chama o modelo para executar a query gerada ou ajustada
         result = llm.invoke(formatted_prompt)
-        print(f"🔍 Resultado após invoke: {result}")
-        
+        print(f"🔍 Resultado após invoke: {result.content}")
         query = extract_sql_query_from_response(result)
+        print(f"🔍 Query extraida: {query}")
         
         # Executando a consulta no banco de dados
         with db._engine.connect() as conn:
@@ -73,9 +86,8 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
         # Verificar si el resultado es válido
         if not (isinstance(result, list) and all(hasattr(row, "_mapping") for row in result)):
             print("⚠️ Resultado inválido. A IA retornou algo inesperado.")
-            error_message = "Resultado inválido. A IA retornou algo inesperado."
-            error_data = [{"error": error_message}]
-            return query, error_data
+            return query, "SQL_ERROR_OCCURRED" # ← standardized tag for IA3 to detect errors
+
 
         # Convertir resultados
         refined_result_data = [
@@ -86,9 +98,8 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
         # Verificar si hay datos
         if not refined_result_data:
             print("⚠️ A IA2 não retornou resultados para a query gerada. Passando para a IA3...")
-            error_message = "Não foi possível encontrar dados relacionados à sua pergunta."
-            error_data = [{"error": error_message}]
-            return query, error_data
+            return query, "NO_RESULTS_FOUND" # ← standardized tag for IA3 to detect errors
+
 
         # Devolver resultados
         print(f"📊 Resultados da query refinada: {refined_result_data}")
@@ -97,7 +108,6 @@ def validate_and_refine_query(user_question: str, generated_query: str, query_re
         
     except Exception as e:
         print(f"❌ Erro ao executar o processo: {e}")
-        # Em vez de retornar uma string no segundo elemento, retorne uma lista com um dicionário de erro
-        error_message = "Ocorreu um erro ao tentar processar sua solicitação."
-        error_data = [{"error": error_message}]
-        return query, error_data
+        # En caso de error, devolvemos el tag estandarizado:
+        return query, "SQL_ERROR_OCCURRED" # ← standardized tag for IA3 to detect errors
+

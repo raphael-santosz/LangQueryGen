@@ -1,49 +1,100 @@
 {
-    "exemplos": [
-      {
-        "pergunta": "Qual o salário de João?",
-        "query": "SELECT Salario FROM Funcionario WHERE Nome = 'João'"
-      },
-      {
-        "pergunta": "Quais são os funcionários do departamento de TI?",
-        "query": "SELECT Nome FROM Funcionario WHERE Departamento = 'TI'"
-      },
-      {
-        "pergunta": "Quais são os funcionários com salário maior que 3000?",
-        "query": "SELECT Nome FROM Funcionario WHERE Salario > 3000"
-      },
-      {
-        "pergunta": "Quantos clientes existem na tabela?",
-        "query": "SELECT COUNT(*) FROM Clientes"
-      },
-      {
-        "pergunta": "Qual o total de vendas por produto?",
-        "query": "SELECT Produto, SUM(Vendas) FROM Vendas GROUP BY Produto"
-      },
-      {
-        "pergunta": "Quanto é o saldo de salário do Usuário1?",
-        "query": "SELECT (Salario/30) * DAY([DataDemissao]) AS SaldoSalario FROM [Funcionario] WHERE [Nome] = 'Usuário1'"
-      },
-      {
-        "pergunta": "Qual o valor do décimo terceiro proporcional do funcionário Carlos Almeida?",
-        "query": "select (Salario/12) * DATEDIFF(month, cast(dateadd(yy, datediff(yy, 0, GETDATE()), 0) as date), cast(getdate() as date)) AS DateDiff from Funcionario where nome = 'Carlos Almeida'"
-      },
-      {
-        "pergunta": "Qual o valor do FGTS total do funcionário João Gomes?",
-        "query": "select (Salario * 0.08) * DATEDIFF(month, DataAdmissao, cast(getdate() as date)) AS FGTS from Funcionario where nome = 'João Gomes'; "
-      },
-      {
-        "pergunta": "Qual o valor da multa de 40% do funcionário Carlos Almeida?",
-        "query": "SELECT 0.4 * (Salario * 0.08) * DATEDIFF(month, DataAdmissao, CAST(GETDATE() AS date)) AS MultaFGTS FROM Funcionario WHERE Nome = 'Carlos Almeida';"
-      },
-      {
-        "pergunta": "Qual o valor da folha de pagamento total da empresa?",
-        "query": "select sum(Salario) as FolhaPagamento from Funcionario Where DataDemissao is Null"
-      },
-      {
-        "pergunta": "Qual a politica de ferias da empresa?",
-        "query": "select PoliticaDescricao as Politica from Politicas Where PoliticaNome like '%Ferias%'" 
-      }    
-    ]
-  }
-  
+  "exemplos": [
+    {
+      "perguntas": [
+        "Qual é o salário do FuncionarioX?",
+        "What is the salary of employee FuncionarioX?",
+        "¿Cuál es el salario del empleado FuncionarioX?"
+      ],
+      "query": "SELECT Salario FROM Funcionario WHERE Nome = '{nombre_empleado}'"
+    },
+    {
+      "perguntas": [
+        "Qual é o valor do FGTS total do FuncionarioX?",
+        "What is the total FGTS value for employee FuncionarioX?",
+        "¿Cuál es el valor total del FGTS del empleado FuncionarioX?"
+      ],
+      "query": "SELECT (Salario * 0.08) * DATEDIFF(month, DataAdmissao, CAST(GETDATE() AS date)) AS FGTS FROM Funcionario WHERE Nome = '{nombre_empleado}';"
+    },
+    {
+      "perguntas": [
+        "Qual é o valor da multa de 40% do FuncionarioX?",
+        "What is the 40% fine amount for employee FuncionarioX?",
+        "¿Cuál es el valor de la multa del 40% del empleado FuncionarioX?"
+      ],
+      "query": "SELECT 0.4 * (Salario * 0.08) * DATEDIFF(month, DataAdmissao, CAST(GETDATE() AS date)) AS MultaFGTS FROM Funcionario WHERE Nome = '{nombre_empleado}';"
+    },
+    {
+      "perguntas": [
+        "Quanto é o saldo de salário do UsuarioX?",
+        "What is the remaining salary balance for UsuarioX?",
+        "¿Cuál es el saldo de salario del UsuarioX?"
+      ],
+      "query": "SELECT (Salario/30) * DAY([DataDemissao]) AS SaldoSalario FROM [Funcionario] WHERE [Nome] = '{nombre_empleado}'"
+    },
+    {
+      "perguntas": [
+        "Qual é o valor do décimo terceiro proporcional do FuncionarioX?",
+        "What is the proportional 13th salary value for employee FuncionarioX?",
+        "¿Cuál es el valor del décimo tercer salario proporcional del empleado FuncionarioX?"
+      ],
+      "query": "SELECT (Salario/12) * DATEDIFF(month, CAST(DATEADD(yy, DATEDIFF(yy, 0, GETDATE()), 0) AS date), CAST(GETDATE() AS date)) AS DateDiff FROM Funcionario WHERE Nome = '{nombre_empleado}'"
+    },
+    {
+      "perguntas": [
+        "Qual é o valor da folha de pagamento total da empresa?",
+        "What is the total payroll value of the company?",
+        "¿Cuál es el valor total de la nómina de la empresa?"
+      ],
+      "query": "SELECT SUM(Salario) AS FolhaPagamento FROM Funcionario WHERE DataDemissao IS NULL"
+    },
+    {
+      "perguntas": [
+        "Qual é a política de férias da empresa?",
+        "What is the company's vacation policy?",
+        "¿Cuál es la política de vacaciones de la empresa?"
+      ],
+      "query": "SELECT PoliticaDescricao AS Politica FROM Politicas WHERE PoliticaNome LIKE '%Ferias%'"
+    },
+    {
+      "perguntas": [
+        "Quais são os funcionários do departamento de TI?",
+        "Which employees work in the IT department?",
+        "¿Cuáles son los empleados del departamento de TI?"
+      ],
+      "query": "SELECT Nome FROM Funcionario WHERE Departamento = 'TI'"
+    },
+    {
+      "perguntas": [
+        "Quantos clientes existem na tabela?",
+        "How many clients are there in the table?",
+        "¿Cuántos clientes hay en la tabla?"
+      ],
+      "query": "SELECT COUNT(*) FROM Clientes"
+    },
+    {
+      "perguntas": [
+        "Qual é o total de vendas por produto?",
+        "What is the total sales per product?",
+        "¿Cuál es el total de ventas por producto?"
+      ],
+      "query": "SELECT Produto, SUM(Vendas) FROM Vendas GROUP BY Produto"
+    },
+    {
+      "perguntas": [
+        "Qual é o valor do FGTS total do FuncionarioX?",
+        "What is the total FGTS value for employee FuncionarioX?",
+        "¿Cuál es el valor total del FGTS del empleado FuncionarioX?"
+      ],
+      "query": "SELECT (Salario * 0.08) * DATEDIFF(month, DataAdmissao, CAST(GETDATE() AS date)) AS FGTS FROM Funcionario WHERE Nome = '{nombre_empleado}';"
+    },
+    {
+      "perguntas": [
+        "Qual é a data de contratação do FuncionarioX?",
+        "What is FuncionarioX's hiring date?",
+        "¿Cuál es la fecha de contratación de FuncionarioX?"
+      ],
+      "query": "SELECT DataAdmissao FROM Funcionario WHERE Nome = '{nombre_empleado}'"
+    }
+  ]
+}

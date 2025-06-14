@@ -18,8 +18,7 @@ def generate_query():
         # Captura a mensagem e o token enviados
         question = request.form.get('question')
         token = request.form.get('token')
-        print(f"Mensagem recebida: {question}")
-        print(f"Token recebido: {token}")
+        print(f"Mensagem recebida en la API: {question}")
 
         # Verifica se foi enviado um arquivo
         file = request.files.get('file')

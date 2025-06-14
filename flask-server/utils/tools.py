@@ -1,23 +1,55 @@
 from langchain.schema import AIMessage
 from PyPDF2 import PdfReader
 from docx import Document
+import re
+import json
+from pathlib import Path
+from sqlalchemy import inspect, text
+from langchain_community.utilities import SQLDatabase
+from sqlalchemy import inspect
+import concurrent.futures
+
+
+import re
+from langchain_core.messages import AIMessage
+
+import re
+from langchain_core.messages import AIMessage
 
 def extract_sql_query_from_response(result) -> str:
     """
-    Função para extrair a query SQL da resposta da IA.
-    Se a resposta for um AIMessage, acessa o campo 'content'. 
-    Se for uma string simples, apenas aplica o 'strip' para limpar.
+    Extrae la última instrucción SELECT válida de la respuesta de la IA.
+    Elimina posibles comentarios y explicaciones previas, y descarta instrucciones peligrosas.
     """
-    # Verifica se o resultado é uma instância de AIMessage
-    if isinstance(result, AIMessage):
-        query = result.content.strip()  # Acessa diretamente o conteúdo da mensagem e aplica strip
-    else:
-        query = result.strip()  # Caso contrário, trata como string simples
-    
-    if not query:
-        raise ValueError("❌ A resposta da IA não contém uma query SQL válida.")
-    
+
+    # Extraer el contenido de texto
+    content = result.content.strip() if isinstance(result, AIMessage) else str(result).strip()
+
+    # Buscar todas las ocurrencias de SELECT
+    matches = list(re.finditer(r'\bSELECT\b', content, re.IGNORECASE))
+    if not matches:
+        raise ValueError("❌ No se encontró una instrucción SELECT válida en la respuesta de la IA.")
+
+    # Tomar la última aparición
+    last_match = matches[-1]
+    query = content[last_match.start():].strip()
+
+    # Opcional: quitar bloques markdown
+    if query.startswith("```sql"):
+        query = query[6:]  # quitar ```sql
+    query = query.strip("` \n")
+
+    # Validación básica
+    if not query.upper().startswith("SELECT"):
+        raise ValueError("❌ La query extraída no comienza con SELECT. Posible contenido inválido.")
+
+    # Asegurar que no contiene comandos peligrosos
+    forbidden = ['UPDATE', 'DELETE', 'INSERT', 'DROP', 'ALTER']
+    if any(cmd in query.upper() for cmd in forbidden):
+        raise ValueError("❌ La respuesta contiene comandos peligrosos.")
+
     return query
+
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     with open(pdf_path, 'rb') as file:
@@ -42,12 +74,11 @@ def extract_text_from_file(file_path: str) -> str:
     else:
         raise ValueError("Formato de arquivo não suportado.")
     
-import json
-from pathlib import Path
-
 def carregar_exemplos_string(caminho_exemplos: str = None) -> str:
     """
     Lê o arquivo JSON de exemplos e formata a string para uso nos prompts.
+    Suporta o novo formato com 'perguntas': [ ... ] e 'query': ...
+    
     :param caminho_exemplos: caminho para o arquivo JSON de exemplos. 
                              Se None, usa o caminho padrão './utils/exemplos.json'
     :return: string formatada com exemplos prontos para injeção em prompts.
@@ -66,6 +97,61 @@ def carregar_exemplos_string(caminho_exemplos: str = None) -> str:
         print(f"Erro ao carregar exemplos JSON: {e}")
         return ""
 
-    # Formata a lista de exemplos no padrão esperado
-    exemplos_string = "\n".join([f"- {exemplo['pergunta']} => {exemplo['query']}" for exemplo in exemplos])
+    # Formata a lista de exemplos no padrão esperado (para cada pergunta do array)
+    exemplos_string = "\n".join([
+        f"- {pergunta} => {exemplo['query']}"
+        for exemplo in exemplos
+        for pergunta in exemplo.get("perguntas", [])
+    ])
+    
     return exemplos_string
+
+def carregar_guides_md(path: str) -> str:
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+
+def get_table_example(db, table):
+    """
+    Obtiene el ejemplo de datos de la tabla especificada.
+    """
+    # Inspeccionar las columnas de la tabla
+    inspector = inspect(db._engine)
+    columns = [column['name'] for column in inspector.get_columns(table)]
+    query = f"SELECT TOP 2 {', '.join(columns)} FROM {table}"
+
+    try:
+        # Ejecutar la consulta
+        with db._engine.connect() as conn:
+            result = conn.execute(text(query)).fetchall()
+
+        # Formatear filas
+        example_rows = [{columns[i]: row[i] for i in range(len(columns))} for row in result]
+
+        return {table: {"columns": columns, "example_rows": example_rows}}
+
+    except Exception as e:
+        print(f"❌ Error al obtener datos de la tabla {table}: {e}")
+        return {table: {"columns": columns, "example_rows": []}}
+
+def get_relevant_table_info(db: SQLDatabase) -> dict:
+    """
+    Obtiene la información relevante de las tablas utilizando concurrencia.
+    """
+    table_info = {}
+
+    # Inspeccionar las tablas del esquema
+    inspector = inspect(db._engine)
+    tables = inspector.get_table_names()
+
+    # Usar concurrencia para ejecutar las consultas de las tablas en paralelo
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(get_table_example, db, table): table for table in tables}
+        
+        for future in concurrent.futures.as_completed(futures):
+            table = futures[future]
+            try:
+                table_info.update(future.result())
+            except Exception as e:
+                print(f"Error al procesar la tabla {table}: {e}")
+    
+    return table_info
