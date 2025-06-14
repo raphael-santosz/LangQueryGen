@@ -359,9 +359,9 @@ export default function ChatInterface() {
                     <span className="text-sm text-gray-900">
                       {userEmail || t('user', { defaultMessage: 'User' })}
                     </span>
-                    {/* <span className="text-xs text-gray-500 text-right">
+                    <span className="text-xs text-gray-500 text-right">
                       {userPosition || t('unknownPosition', { defaultMessage: 'Unknown' })}
-                    </span> */}
+                    </span>
                   </div>
                   <button
                     onClick={handleLogout}
