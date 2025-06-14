@@ -1,14 +1,10 @@
-from langchain_ollama import ChatOllama
-from langchain_community.utilities import SQLDatabase
-from langchain.chains import LLMChain
-from sqlalchemy import text
 from models.model import QueryRequest, QueryResponse
-from langchain_core.prompts import PromptTemplate
 from services.validateQuery_agent import validate_and_refine_query  # IA2 chamada diretamente
 from services.response_agent import generate_answer
 from services.primaryQuery_agent import generate_sql_query
-from utils.tools import extract_sql_query_from_response  # Função de extração de SQL
-import json
+import os
+
+KEY_BASE64 = os.getenv("SECRET_TOKEN_KEY", "q9egeDk+L1t2C8pgH/9rzE/ezPflr3cx6JLujZSiaX8=")
 
 
 def run_query_agent(query_request: QueryRequest) -> QueryResponse:

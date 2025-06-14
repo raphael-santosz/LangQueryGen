@@ -8,7 +8,11 @@ from sqlalchemy import inspect, text
 from langchain_community.utilities import SQLDatabase
 from sqlalchemy import inspect
 import concurrent.futures
-
+import base64
+import nacl.secret
+import nacl.encoding
+import firebase_admin
+from firebase_admin import credentials, auth
 
 import re
 from langchain_core.messages import AIMessage
@@ -155,3 +159,44 @@ def get_relevant_table_info(db: SQLDatabase) -> dict:
                 print(f"Error al procesar la tabla {table}: {e}")
     
     return table_info
+
+
+import os
+import firebase_admin
+from firebase_admin import credentials, auth
+
+def initialize_firebase():
+    if not firebase_admin._apps:
+        # Construye la ruta absoluta al JSON
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # flask-server/utils
+        key_path = os.path.join(current_dir, "..", "secrets", "serviceAccountKey.json")
+        key_path = os.path.abspath(key_path)  # Normaliza la ruta final
+
+        cred = credentials.Certificate(key_path)
+        firebase_admin.initialize_app(cred)
+
+
+def decrypt_token(token: str) -> str:
+    try:
+        # 🔧 Asegura que Firebase esté inicializado
+        initialize_firebase()
+
+        # ✅ Verifica e decodifica el token
+        decoded_token = auth.verify_id_token(token)
+
+        # 🔍 Extraer el rol
+        role = decoded_token.get("role")
+        if not role:
+            email = decoded_token.get("email", "")
+            if "admin" in email:
+                role = "main-admin"
+            elif "gestor" in email:
+                role = "gestor"
+            else:
+                role = "funcionario"
+
+        print(f"Nível de acesso detectado: {role}")
+        return role
+    except Exception as e:
+        print(f"Erro ao verificar token Firebase: {e}")
+        return "invalid"

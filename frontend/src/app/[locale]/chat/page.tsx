@@ -71,7 +71,7 @@ export default function ChatInterface() {
     const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
       if (user) {
         setUserEmail(user.email || t('user', { defaultMessage: 'User' }));
-        user.getIdToken().then((idToken) => setToken(idToken)).catch((error) => {
+        user.getIdToken(true).then((idToken) => setToken(idToken)).catch((error) => {
           console.error('Erro ao obter token:', error);
           setError(t('authError', { defaultMessage: 'Authentication error.' }));
         });

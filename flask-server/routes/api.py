@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from services.agent_service import run_query_agent
 from models.model import QueryRequest, QueryResponse
 import os
+from utils.tools import decrypt_token
 
 api_bp = Blueprint("api", __name__)
 
@@ -18,7 +19,8 @@ def generate_query():
         # Captura a mensagem e o token enviados
         question = request.form.get('question')
         token = request.form.get('token')
-        print(f"Mensagem recebida en la API: {question}")
+
+        access_level = decrypt_token(token)
 
         # Verifica se foi enviado um arquivo
         file = request.files.get('file')

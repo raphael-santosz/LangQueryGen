@@ -49,3 +49,4 @@ ollama-models/
 *.log
 
 flask-server/uploads/
+/flask-server/secrets/
