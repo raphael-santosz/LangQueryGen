@@ -1,4 +1,4 @@
-from models.model import QueryRequest, QueryResponse
+from models.model import QueryRequest
 from services.validateQuery_agent import validate_and_refine_query  # IA2 chamada diretamente
 from services.response_agent import generate_answer
 from services.primaryQuery_agent import generate_sql_query
@@ -7,7 +7,7 @@ import os
 KEY_BASE64 = os.getenv("SECRET_TOKEN_KEY", "q9egeDk+L1t2C8pgH/9rzE/ezPflr3cx6JLujZSiaX8=")
 
 
-def run_query_agent(query_request: QueryRequest) -> QueryResponse:
+def run_query_agent(query_request: QueryRequest):
     try:
         print("Iniciando a geração da consulta SQL...")
 
@@ -15,7 +15,7 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
 
         print("Passando para a IA2 para validação e refinamento...")
         try:
-            refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, result_data)
+            refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, result_data,query_request.access_level)
             print("Consultas refinadas pela IA2.")
         except Exception as e:
             print(f"❌ Erro ao executar o processo na IA2: {e}")
@@ -37,7 +37,7 @@ def run_query_agent(query_request: QueryRequest) -> QueryResponse:
         error_message = str(e)
 
         try:
-            refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, error_message)
+            refined_query, refined_result_data = validate_and_refine_query(query_request.question, raw_query, error_message,query_request.access_level)
             print("Erro refinado pela IA2.")
         except Exception as e:
             print(f"❌ Erro ao executar o processo na IA2: {e}")

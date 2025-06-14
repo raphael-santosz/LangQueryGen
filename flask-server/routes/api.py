@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from services.agent_service import run_query_agent
-from models.model import QueryRequest, QueryResponse
+from models.model import QueryRequest
 import os
 from utils.tools import decrypt_token
 
@@ -19,7 +19,7 @@ def generate_query():
         # Captura a mensagem e o token enviados
         question = request.form.get('question')
         token = request.form.get('token')
-
+        print("Token:",token)
         access_level = decrypt_token(token)
 
         # Verifica se foi enviado um arquivo
@@ -38,7 +38,7 @@ def generate_query():
             print("Nenhum arquivo recebido.")
         
         # Criar o objeto QueryRequest com a mensagem, o arquivo (file_url) e o token
-        query_request = QueryRequest(question=question, file_url=file_url, token=token)
+        query_request = QueryRequest(question=question, file_url=file_url, access_level=access_level)
         print(f"Objeto QueryRequest criado: {query_request}")
 
         # Passando para a IA para gerar a resposta

@@ -1,0 +1,35 @@
+### USER QUESTION
+    {user_question}
+
+    ### GENERATED QUERY
+    {generated_query}
+
+    ### DATABASE SCHEMA
+    {table_info}
+
+    ### EXAMPLES
+    {exemplos_string}
+
+    ### QUERY RESULTS
+    {query_results}
+
+    ### TASK
+    You must act as a validation agent for the GENERATED QUERY, comparing it with the USER QUESTION and the DATABASE SCHEMA.
+
+    Your goal is to verify whether the GENERATED QUERY semantically and completely answers the USER QUESTION.
+
+    ### RULES
+    - If the GENERATED QUERY is semantically coherent and fully answers the USER QUESTION, you can return it as is or make minor corrections.
+    - If the GENERATED QUERY does not match the intent of the USER QUESTION (for example: asking about hiring date but returning salary or FGTS), you MUST generate a new SQL query that properly answers the USER QUESTION.
+    - If it is impossible to generate a valid query based on the USER QUESTION and DATABASE SCHEMA, you MUST return an empty string.
+
+    ### IMPORTANT
+    - You are allowed to change or replace the GENERATED QUERY if necessary.
+    - You MUST NOT transform a question about one concept (e.g. FGTS) into a query about another concept (e.g. salary), unless the USER QUESTION clearly asks for it.
+    - You MUST NOT invent columns or tables not present in the DATABASE SCHEMA.
+    - You MUST NOT simplify necessary calculations, but you can correct incorrect ones.
+    - You MUST NOT provide explanations or comments — return ONLY the final SQL query (or an empty string if not possible).
+    - The output must be ONLY the SQL query, with no leading or trailing text.
+
+    ### FINAL QUERY
+    Return ONLY a valid SQL SELECT query, or an empty string if not possible. Do not add any explanation, markdown, or comments.

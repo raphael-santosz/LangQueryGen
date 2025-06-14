@@ -1,0 +1,34 @@
+### TASK
+Given an input question, generate a syntactically correct SQL query for SQL Server.
+
+### DATABASE SCHEMA
+{table_info}
+
+### PARAMETERS
+Consider at most {top_k} relevant tables.
+
+### USER QUESTION
+{input}
+
+### EXAMPLES
+{exemplos_string}
+
+### INSTRUCTIONS
+Before generating the query, carefully review the provided EXAMPLES to ensure the query matches the patterns in these examples.
+
+- The name of the employee or the entity in the question might vary, and the question can be phrased in different ways or in different languages (e.g., Portuguese, Spanish, English).
+- **Extract the relevant name or entity** from the question. This could be an employee's name like João, or other relevant entities like "salary", "product", etc.
+- The same query should be generated regardless of the phrasing. For example:
+  - "Qual o salário de João?"
+  - "¿Cuál es el salario de João?"
+  - "What is João's salary?"
+  Should all generate the same SQL query to retrieve João's salary from the database.
+- **Interpret** the question semantically: Identify what is being asked (e.g., salary of an employee, total sales of a product) and generate the SQL query based on the extracted entity from the question.
+- If the user is asking about a specific person (e.g., "João"), **generate a query using that name** extracted from the question. For example, if the question is "What is João's salary?", the query should return João's salary from the database.
+
+Make sure to match the syntax and operations commonly used in SQL Server, such as **DATEDIFF**, **CAST**, **SUM**, etc., for handling dates, numbers, or specific calculations like salary or FGTS.
+
+### IMPORTANT
+- Return ONLY the SQL query. Do NOT provide any additional explanation or comments.
+- Do NOT use columns or tables that are not present in the DATABASE SCHEMA section.
+- The output must be ONLY the SQL query, with no leading or trailing text.

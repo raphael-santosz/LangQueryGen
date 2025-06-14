@@ -8,15 +8,10 @@ from sqlalchemy import inspect, text
 from langchain_community.utilities import SQLDatabase
 from sqlalchemy import inspect
 import concurrent.futures
-import base64
-import nacl.secret
-import nacl.encoding
 import firebase_admin
-from firebase_admin import credentials, auth
-
-import re
-from langchain_core.messages import AIMessage
-
+from firebase_admin import credentials, auth, firestore
+import os
+from pathlib import Path
 import re
 from langchain_core.messages import AIMessage
 
@@ -161,10 +156,6 @@ def get_relevant_table_info(db: SQLDatabase) -> dict:
     return table_info
 
 
-import os
-import firebase_admin
-from firebase_admin import credentials, auth
-
 def initialize_firebase():
     if not firebase_admin._apps:
         # Construye la ruta absoluta al JSON
@@ -178,25 +169,46 @@ def initialize_firebase():
 
 def decrypt_token(token: str) -> str:
     try:
-        # 🔧 Asegura que Firebase esté inicializado
+        # Inicializa Firebase si aún no está hecho
         initialize_firebase()
 
-        # ✅ Verifica e decodifica el token
+        # Verifica e decodifica o token JWT de Firebase
         decoded_token = auth.verify_id_token(token)
+        uid = decoded_token.get("uid")
 
-        # 🔍 Extraer el rol
-        role = decoded_token.get("role")
-        if not role:
-            email = decoded_token.get("email", "")
-            if "admin" in email:
-                role = "main-admin"
-            elif "gestor" in email:
-                role = "gestor"
+        # 🔍 Consultar Firestore para obter o nível de acesso
+        db = firestore.client()
+        doc = db.collection("Users").document(uid).get()
+
+        if doc.exists:
+            user_data = doc.to_dict()
+            position = user_data.get("position", "").lower()
+
+            if "main-admin" in position:
+                return "Main-admin"
+            elif "gestor" in position:
+                return "Gestor"
             else:
-                role = "funcionario"
+                return "Funcionário"
+        else:
+            print("❌ Usuário não encontrado na coleção 'Users'")
+            return "invalid"
 
-        print(f"Nível de acesso detectado: {role}")
-        return role
     except Exception as e:
         print(f"Erro ao verificar token Firebase: {e}")
         return "invalid"
+
+
+def carregar_prompt(prompt_path: str) -> str:
+    """
+    Carrega o conteúdo de um prompt a partir de um caminho relativo à raiz do projeto.
+    """
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))  # flask-server/utils
+        project_root = os.path.abspath(os.path.join(base_dir, ".."))  # flask-server/
+        full_path = os.path.join(project_root, prompt_path)  # caminho completo
+        with open(full_path, "r", encoding="utf-8") as file:
+            return file.read()
+    except Exception as e:
+        print(f"❌ Erro ao carregar o prompt '{prompt_path}': {e}")
+        raise
