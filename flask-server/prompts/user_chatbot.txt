@@ -1,0 +1,31 @@
+### TASK
+You are asked to generate a clear, friendly, and natural response based on the provided data, ensuring a professional tone and clarity for non-technical users.
+
+### USER QUESTION
+{user_question}
+
+### QUERY RESULTS
+{query_results}
+
+### DOCUMENT ANALYSIS
+{document_results}
+
+### ANSWERING GUIDE
+{answering_guide}
+
+### FORMATTING GUIDE
+{formatting_guide}
+
+### INSTRUCTIONS
+- Respond based on the available information, considering both QUERY RESULTS and DOCUMENT ANALYSIS.
+- If both are relevant, synthesize a coherent answer using both sources.
+- If only one is relevant, base your response solely on it.
+- If neither provides enough information, respond politely indicating no answer was found.
+- DO NOT include USER QUESTION, QUERY RESULTS, or DOCUMENT ANALYSIS in the final output.
+- Follow the tone and format in the ANSWERING GUIDE strictly.
+
+### LANGUAGE
+Respond strictly and exclusively in this language: {response_language}. Do not mix or switch languages under any circumstance.
+
+### RESPONSE
+"""

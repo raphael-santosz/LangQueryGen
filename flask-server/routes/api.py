@@ -22,7 +22,6 @@ def generate_query():
 
         access_level, user_name = decrypt_token(token)
 
-
         # Verifica se foi enviado um arquivo
         file = request.files.get('file')
         file_url = None
@@ -33,7 +32,7 @@ def generate_query():
             filename = file.filename
             file_path = os.path.join(UPLOAD_FOLDER, filename)
             file.save(file_path)
-            file_url = f'http://localhost:5000/{file_path}'
+            file_url = file_path
             print(f"Arquivo salvo em: {file_path}")
         else:
             print("Nenhum arquivo recebido.")

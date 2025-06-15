@@ -1,6 +1,4 @@
 from langchain.schema import AIMessage
-from PyPDF2 import PdfReader
-from docx import Document
 import json
 from pathlib import Path
 from sqlalchemy import inspect, text
@@ -13,6 +11,11 @@ import os
 from pathlib import Path
 import re
 from langchain_core.messages import AIMessage
+import os
+from typing import Optional
+import docx2txt
+import PyPDF2
+import markdown
 
 def extract_sql_query_from_response(result) -> str:
     """
@@ -50,32 +53,6 @@ def extract_sql_query_from_response(result) -> str:
 
     print(f"🟢 Query final válida extraída: {query}")
     return query
-
-
-
-
-def extract_text_from_pdf(pdf_path: str) -> str:
-    with open(pdf_path, 'rb') as file:
-        reader = PdfReader(file)
-        text = ''
-        for page in reader.pages:
-            text += page.extract_text()
-    return text
-
-def extract_text_from_word(docx_path: str) -> str:
-    doc = Document(docx_path)
-    text = ''
-    for paragraph in doc.paragraphs:
-        text += paragraph.text + '\n'
-    return text
-
-def extract_text_from_file(file_path: str) -> str:
-    if file_path.endswith('.pdf'):
-        return extract_text_from_pdf(file_path)
-    elif file_path.endswith('.docx'):
-        return extract_text_from_word(file_path)
-    else:
-        raise ValueError("Formato de arquivo não suportado.")
     
 def carregar_exemplos_string(caminho_exemplos: str = None) -> str:
     """
@@ -215,3 +192,47 @@ def carregar_prompt(prompt_path: str) -> str:
     except Exception as e:
         print(f"❌ Erro ao carregar o prompt '{prompt_path}': {e}")
         raise
+
+
+def extract_text_from_file(file_path: str) -> str:
+    extension = os.path.splitext(file_path)[1].lower()
+
+    try:
+        if extension == ".txt":
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+
+        elif extension == ".docx":
+            return docx2txt.process(file_path)
+
+        elif extension == ".pdf":
+            with open(file_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                return "\n".join([page.extract_text() or "" for page in reader.pages])
+
+        elif extension == ".md":
+            with open(file_path, "r", encoding="utf-8") as f:
+                html = markdown.markdown(f.read())
+                return html  # Opcional: podrías limpiar etiquetas HTML si prefieres texto plano
+
+        else:
+            return ""
+    except Exception as e:
+        print(f"[ERROR] Error al leer el archivo ({file_path}): {e}")
+        return ""
+
+# Função para formatar os resultados da query
+def format_query_results(query_results):
+    if query_results == "SQL_ERROR_OCCURRED":
+        return "SQL_ERROR_OCCURRED"
+    if query_results == "NO_RESULTS_FOUND":
+        return "NO_RESULTS_FOUND"
+    if isinstance(query_results, str):
+        return query_results
+
+    formatted_rows = []
+    for i, row in enumerate(query_results, 1):
+        row_text = " | ".join([f"{k}: {v}" for k, v in row.items()])
+        formatted_rows.append(f"Row {i}: {row_text}")
+
+    return "\n".join(formatted_rows)
