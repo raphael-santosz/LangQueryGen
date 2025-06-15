@@ -5,3 +5,4 @@ class QueryRequest(BaseModel):
     question: str
     file_url: Optional[str] = None
     access_level: str
+    user_name: Optional[str] = None

@@ -1,7 +1,6 @@
 from langchain.schema import AIMessage
 from PyPDF2 import PdfReader
 from docx import Document
-import re
 import json
 from pathlib import Path
 from sqlalchemy import inspect, text
@@ -17,37 +16,42 @@ from langchain_core.messages import AIMessage
 
 def extract_sql_query_from_response(result) -> str:
     """
-    Extrae la última instrucción SELECT válida de la respuesta de la IA.
-    Elimina posibles comentarios y explicaciones previas, y descarta instrucciones peligrosas.
+    Extrae una instrucción SELECT válida de la respuesta de la IA.
+    Es tolerante a formatos sin punto y coma o sin bloques ```sql```.
     """
-
-    # Extraer el contenido de texto
+    # Extraer contenido de texto
     content = result.content.strip() if isinstance(result, AIMessage) else str(result).strip()
+    print("\n🟡 [DEBUG] Contenido recibido:")
+    print(content)
 
-    # Buscar todas las ocurrencias de SELECT
-    matches = list(re.finditer(r'\bSELECT\b', content, re.IGNORECASE))
-    if not matches:
-        raise ValueError("❌ No se encontró una instrucción SELECT válida en la respuesta de la IA.")
-
-    # Tomar la última aparición
-    last_match = matches[-1]
-    query = content[last_match.start():].strip()
-
-    # Opcional: quitar bloques markdown
-    if query.startswith("```sql"):
-        query = query[6:]  # quitar ```sql
-    query = query.strip("` \n")
+    # 1. Intentar extraer bloque ```sql ... ```
+    match = re.search(r"```(?:sql)?\s*(SELECT .*?)```", content, re.DOTALL | re.IGNORECASE)
+    if match:
+        query = match.group(1).strip()
+        print("✅ Match dentro de bloque ```sql```")
+    else:
+        # 2. Buscar SELECT... hasta o final o próxima linha explicativa
+        match = re.search(r"(SELECT\s+.+?FROM\s+\w+\s+WHERE\s+.+?)(?:\n|$)", content, re.IGNORECASE)
+        if match:
+            query = match.group(1).strip()
+            print("✅ Match con SELECT clásico")
+        else:
+            print("❌ No se encontró una instrucción SELECT válida.")
+            raise ValueError("❌ No se encontró una instrucción SELECT válida en la respuesta de la IA.")
 
     # Validación básica
+    query = query.strip("` \n")
     if not query.upper().startswith("SELECT"):
-        raise ValueError("❌ La query extraída no comienza con SELECT. Posible contenido inválido.")
+        raise ValueError("❌ La query extraída no comienza con SELECT.")
 
-    # Asegurar que no contiene comandos peligrosos
     forbidden = ['UPDATE', 'DELETE', 'INSERT', 'DROP', 'ALTER']
     if any(cmd in query.upper() for cmd in forbidden):
         raise ValueError("❌ La respuesta contiene comandos peligrosos.")
 
+    print(f"🟢 Query final válida extraída: {query}")
     return query
+
+
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
@@ -159,6 +163,7 @@ def get_relevant_table_info(db: SQLDatabase) -> dict:
 def initialize_firebase():
     if not firebase_admin._apps:
         # Construye la ruta absoluta al JSON
+        print("[DEBUG] Inicializando Firebase...")
         current_dir = os.path.dirname(os.path.abspath(__file__))  # flask-server/utils
         key_path = os.path.join(current_dir, "..", "secrets", "serviceAccountKey.json")
         key_path = os.path.abspath(key_path)  # Normaliza la ruta final
@@ -167,36 +172,34 @@ def initialize_firebase():
         firebase_admin.initialize_app(cred)
 
 
-def decrypt_token(token: str) -> str:
+def decrypt_token(token: str) -> tuple[str, str]:
     try:
-        # Inicializa Firebase si aún no está hecho
         initialize_firebase()
-
-        # Verifica e decodifica o token JWT de Firebase
         decoded_token = auth.verify_id_token(token)
         uid = decoded_token.get("uid")
+        print(f"[DEBUG] UID extraído do token: {uid}")
 
-        # 🔍 Consultar Firestore para obter o nível de acesso
-        db = firestore.client()
-        doc = db.collection("Users").document(uid).get()
+        db_firestore = firestore.client()
+        doc = db_firestore.collection("Users").document(uid).get()
 
         if doc.exists:
             user_data = doc.to_dict()
+            print(f"[Firebase DEBUG] user_data extraído: {user_data}")
             position = user_data.get("position", "").lower()
+            name = user_data.get("name", "")  # ⬅️ Obtener nombre
 
             if "main-admin" in position:
-                return "Main-admin"
+                return "Main-admin", name
             elif "gestor" in position:
-                return "Gestor"
+                return "Gestor", name
             else:
-                return "Funcionário"
+                return "Funcionário", name
         else:
-            print("❌ Usuário não encontrado na coleção 'Users'")
-            return "invalid"
+            return "invalid", ""
 
     except Exception as e:
         print(f"Erro ao verificar token Firebase: {e}")
-        return "invalid"
+        return "invalid", ""
 
 
 def carregar_prompt(prompt_path: str) -> str:

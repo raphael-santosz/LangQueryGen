@@ -24,27 +24,39 @@ def generate_sql_query(query_request: QueryRequest):
     table_info = get_relevant_table_info(db)
 
     try:
-        # Escoge el prompt basado en el nivel de acceso
+        # 📦 Cargar el prompt según el nivel de acceso
         if query_request.access_level == "Funcionário":
+            print("User with low access connected.")
             template_str = carregar_prompt("prompts/lowAccess_primary.txt")
+            input_variables = ["input", "top_k", "table_info", "exemplos_string", "user_name"]
         else:
+            print("User with high access connected.")
             template_str = carregar_prompt("prompts/highAccess_primary.txt")
+            input_variables = ["input", "top_k", "table_info", "exemplos_string"]
 
+        # 🧠 Crear prompt dinámicamente según variables necesarias
         prompt = PromptTemplate(
-            input_variables=["input", "top_k", "table_info", "exemplos_string"],
+            input_variables=input_variables,
             template=template_str
         )
-        chain = LLMChain(llm=llm, prompt=prompt)
 
-        # Ejecutar el modelo
-        result = chain.invoke({
+        # 📤 Armar los inputs para el modelo
+        model_input = {
             "input": query_request.question,
             "table_info": table_info,
             "top_k": 20,
-            "exemplos_string": exemplos_string  # Pasa los ejemplos al modelo
-        })
+            "exemplos_string": exemplos_string
+        }
 
-        text_response = result["text"]
+        # 👤 Si es funcionário, incluir el nombre del usuario
+        if query_request.access_level == "Funcionário":
+            model_input["user_name"] = query_request.user_name
+
+        # 🚀 Ejecutar usando el nuevo pipe
+        result = (prompt | llm).invoke(model_input)
+
+        # El nuevo objeto result es un `AIMessage`, así que usamos `.content` directamente
+        text_response = result.content
 
         # Extraer la query generada
         raw_query = extract_sql_query_from_response(text_response)

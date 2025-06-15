@@ -19,8 +19,9 @@ def generate_query():
         # Captura a mensagem e o token enviados
         question = request.form.get('question')
         token = request.form.get('token')
-        print("Token:",token)
-        access_level = decrypt_token(token)
+
+        access_level, user_name = decrypt_token(token)
+
 
         # Verifica se foi enviado um arquivo
         file = request.files.get('file')
@@ -38,7 +39,7 @@ def generate_query():
             print("Nenhum arquivo recebido.")
         
         # Criar o objeto QueryRequest com a mensagem, o arquivo (file_url) e o token
-        query_request = QueryRequest(question=question, file_url=file_url, access_level=access_level)
+        query_request = QueryRequest(question=question, file_url=file_url, access_level=access_level, user_name=user_name)
         print(f"Objeto QueryRequest criado: {query_request}")
 
         # Passando para a IA para gerar a resposta

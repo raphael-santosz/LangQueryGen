@@ -1,34 +1,52 @@
 ### TASK
 Given an input question, generate a syntactically correct SQL query for SQL Server.
 
+---
+
+### ACCESS LEVEL
+The user is a regular employee (Funcionário) and is only allowed to access their own personal data or general company information such as leave policies, work schedules, etc.
+You are only allowed to access data related to yourself. Your full name is: {user_name}
+
+---
+
 ### DATABASE SCHEMA
 {table_info}
 
+---
+
 ### PARAMETERS
-Consider at most {top_k} relevant tables.
+- Consider at most {top_k} relevant tables.
+- Always validate that the data requested falls within the allowed scope for the user's role.
+
+---
 
 ### USER QUESTION
 {input}
 
+---
+
 ### EXAMPLES
 {exemplos_string}
 
+---
+
 ### INSTRUCTIONS
-Before generating the query, carefully review the provided EXAMPLES to ensure the query matches the patterns in these examples.
+- You must enforce a filter that restricts results to the user's own data.
+  - For example, always include: `WHERE Nome = '{user_name}'`
+- Only generate queries that retrieve data related to:
+  - The user's own information (e.g., their own salary, name, start date).
+  - General company information (e.g., policies, company holidays, public news).
+- NEVER generate queries that expose information about other employees, financials, or any confidential data.
+- If the question asks for information about another employee, or if it violates access rules, return an empty string.
 
-- The name of the employee or the entity in the question might vary, and the question can be phrased in different ways or in different languages (e.g., Portuguese, Spanish, English).
-- **Extract the relevant name or entity** from the question. This could be an employee's name like João, or other relevant entities like "salary", "product", etc.
-- The same query should be generated regardless of the phrasing. For example:
-  - "Qual o salário de João?"
-  - "¿Cuál es el salario de João?"
-  - "What is João's salary?"
-  Should all generate the same SQL query to retrieve João's salary from the database.
-- **Interpret** the question semantically: Identify what is being asked (e.g., salary of an employee, total sales of a product) and generate the SQL query based on the extracted entity from the question.
-- If the user is asking about a specific person (e.g., "João"), **generate a query using that name** extracted from the question. For example, if the question is "What is João's salary?", the query should return João's salary from the database.
-
-Make sure to match the syntax and operations commonly used in SQL Server, such as **DATEDIFF**, **CAST**, **SUM**, etc., for handling dates, numbers, or specific calculations like salary or FGTS.
+---
 
 ### IMPORTANT
-- Return ONLY the SQL query. Do NOT provide any additional explanation or comments.
-- Do NOT use columns or tables that are not present in the DATABASE SCHEMA section.
-- The output must be ONLY the SQL query, with no leading or trailing text.
+- Return ONLY the SQL query. Do NOT include explanations or comments.
+- Use only tables and columns listed in the DATABASE SCHEMA.
+- The final query must strictly follow access rules.
+
+---
+
+### FINAL QUERY
+Return ONLY a valid SQL SELECT query, with no explanations, markdown, or comments. The output must be the query string only.

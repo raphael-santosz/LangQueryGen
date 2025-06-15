@@ -31,5 +31,5 @@
     - You MUST NOT provide explanations or comments — return ONLY the final SQL query (or an empty string if not possible).
     - The output must be ONLY the SQL query, with no leading or trailing text.
 
-    ### FINAL QUERY
-    Return ONLY a valid SQL SELECT query, or an empty string if not possible. Do not add any explanation, markdown, or comments.
+### FINAL QUERY
+Return ONLY a valid SQL SELECT query, with no explanations, markdown, or comments. The output must be the query string only.

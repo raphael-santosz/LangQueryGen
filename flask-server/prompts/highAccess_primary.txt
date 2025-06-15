@@ -32,3 +32,6 @@ Make sure to match the syntax and operations commonly used in SQL Server, such a
 - Return ONLY the SQL query. Do NOT provide any additional explanation or comments.
 - Do NOT use columns or tables that are not present in the DATABASE SCHEMA section.
 - The output must be ONLY the SQL query, with no leading or trailing text.
+
+### FINAL QUERY
+Return ONLY a valid SQL SELECT query, with no explanations, markdown, or comments. The output must be the query string only.

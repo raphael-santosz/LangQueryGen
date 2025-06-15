@@ -14,34 +14,40 @@ exemplos_string = carregar_exemplos_string('utils/exemplos.json')
 llm = ChatOllama(model="llama3:8b", temperature=0)
 db = SQLDatabase.from_uri("mssql+pyodbc://@RAPHAEL_PC/Teste_RAG?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server")
 
-def validate_and_refine_query(user_question: str, generated_query: str, query_results: list, access_level: str) -> tuple:
+def validate_and_refine_query(user_question: str, generated_query: str, query_results: list, access_level: str, user_name: str) -> tuple:
     # Captura a estrutura da base de dados dinamicamente
     table_info = get_relevant_table_info(db)
     query = None
 
-    if access_level == "Funcionário":
-        template_str = carregar_prompt("prompts/lowAccess_validate.txt")
-    else:
-        template_str = carregar_prompt("prompts/highAccess_validate.txt")
-    
-    prompt = PromptTemplate(
-        input_variables=["user_question", "generated_query", "query_results", "table_info", "exemplos_string"],
-        template=template_str
-    )
-
-    formatted_prompt = prompt.format(
-        user_question=user_question,
-        generated_query=generated_query,
-        query_results=query_results,
-        table_info=table_info,
-        exemplos_string=exemplos_string
-    )
-
-    
     try:
-        query = None  # ← inicializa aqui
-        # Chama o modelo para executar a query gerada ou ajustada
-        result = llm.invoke(formatted_prompt)
+        # 📦 Cargar el prompt según el nivel de acceso
+        if access_level == "Funcionário":
+            template_str = carregar_prompt("prompts/lowAccess_validate.txt")
+            input_variables = ["user_question", "generated_query", "query_results", "table_info", "exemplos_string", "user_name"]
+        else:
+            template_str = carregar_prompt("prompts/highAccess_validate.txt")
+            input_variables = ["user_question", "generated_query", "query_results", "table_info", "exemplos_string"]
+
+        prompt = PromptTemplate(
+            input_variables=input_variables,
+            template=template_str
+        )
+
+        # 📤 Construir inputs
+        model_input = {
+            "user_question": user_question,
+            "generated_query": generated_query,
+            "query_results": query_results,
+            "table_info": table_info,
+            "exemplos_string": exemplos_string
+        }
+
+        if access_level == "Funcionário":
+            model_input["user_name"] = user_name  # 👤 Añadir nombre del usuario
+
+        # 🚀 Ejecutar el modelo
+        result = (prompt | llm).invoke(model_input)
+        
         print(f"🔍 Resultado após invoke: {result.content}")
         query = extract_sql_query_from_response(result)
         print(f"🔍 Query extraida: {query}")
