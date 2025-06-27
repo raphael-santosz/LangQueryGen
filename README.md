@@ -1,92 +1,93 @@
 # LangQueryGen
 
-LangQueryGen is a modular AI-powered backend that transforms natural language questions into SQL queries using **Retrieval-Augmented Generation (RAG)** with **LangChain**, **Ollama** (local LLM like Mistral 7B), and **Flask**. The system also includes semantic validation of user input and a Node.js layer for interaction or interface.
+LangQueryGen is a robust AI-driven backend designed to convert natural language questions into SQL queries using a **Retrieval-Augmented Generation (RAG)** approach. It leverages **LangChain**, **Ollama** (local LLMs such as Mistral 7B or LLaMA 3), and **Flask** for query orchestration. The system ensures secure, fully local execution with built-in semantic validation and seamless integration with Node.js for interface or automation layers.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Capabilities
 
-* 🔍 **Natural Language to SQL** with LangChain and a local model (via Ollama)
-* 🧠 **RAG pipeline** with FAISS and HuggingFace embeddings
-* ✅ **Input validation agent** for filtering sensitive questions
-* 🛠️ **Modular Flask API** structure
-* 🧩 **Node.js Integration** for frontend or orchestration
-* 🔒 **Fully local and secure** – no external API calls
+* **Natural Language → SQL Translation** using local LLMs and structured schema prompts  
+* **RAG Pipeline** powered by FAISS vector search and E5/HuggingFace embeddings  
+* **Input Validation Agent** for enforcing security and access control  
+* **Modular Backend Architecture** with Flask and clean service separation  
+* **Frontend/API Gateway Compatibility** via Node.js  
+* **Offline-First Design** – all AI operations are performed locally, no cloud dependency
 
 ---
-
-## 📁 Project Structure
+## 📁 Project Layout
 
 ```
-flask-server/
-├── app.py                 # Flask entry point
-├── routes/                # API routes (Blueprint)
-├── services/              # LangChain agents and logic
-├── models/                # Pydantic request/response models
-├── utils/                 # Auxiliary functions (e.g., query fixer)
-├── venv/                  # Python virtual environment
-├── package-lock.json      # Node.js dependencies
-└── ...
-```
+LangQueryGen/
+├── flask-server/              # Backend (Flask + LangChain)
+│   ├── app.py                 # Entry point
+│   ├── models/                # Pydantic request/response schemas
+│   ├── prompts/               # Structured LLM prompts
+│   ├── routes/                # Flask route definitions (Blueprints)
+│   ├── secrets/               # (Optional) API keys or protected data
+│   ├── services/              # Core logic and LangChain agents
+│   ├── uploads/               # Temporary file storage
+│   ├── utils/                 # Helper functions (e.g., SQL fixers)
+│   └── venv/                  # Python virtual environment
 
+├── frontend/                  # Frontend (Next.js + TypeScript)
+│   ├── src/                   # Pages, components, logic
+│   ├── messages/              # Translation/i18n support
+│   ├── public/                # Static assets
+│   ├── .env.local             # Environment configuration
+│   ├── next.config.ts         # Next.js configuration
+│   └── tsconfig.json          # TypeScript setup
+
+├── requirements.txt           # Python dependencies
+└── README.md
+```
 ---
 
-## 👩‍💻 How to Run (Backend)
+## How to Run the Project
 
-### 1. Clone the repo and create the virtual environment
+### 🔧 Backend (Flask)
 
 ```bash
+# Clone the repository
 git clone https://github.com/raphael-santosz/LangQueryGen.git
 cd LangQueryGen/flask-server
+
+# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate  # or .\venv\Scripts\activate on Windows
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Start the Flask API
 python app.py
 ```
 
----
-
-## 👩‍💻 How to Run (Frontend)
+### 💻 Frontend (Next.js)
 
 ```bash
-cd client
+cd ../frontend
+
+# Install Node.js dependencies
 npm install
+
+# Start the development server
 npm run dev
 ```
 
 ---
 
-## 📆 Requirements
+## ⚙️ Stack & Requirements
 
-* Python 3.10+
-* Node.js 18+
-* Ollama installed locally
-* SQL Server or compatible DB
-* Optional: FAISS, LangChain, HuggingFace embeddings
+**Core Technologies**
+- Python 3.10+ with Flask + Pydantic
+- Node.js 18+ with Next.js (UI or orchestration)
+- LangChain + Ollama (local LLMs like Mistral 7B, LLaMA3)
+- SQLAlchemy + SQL Server (or compatible DB)
+- FAISS + HuggingFace embeddings (optional for enhanced retrieval)
 
----
-
-## ⚙️ Technologies
-
-* 🐍 Flask + Pydantic
-* 🧠 LangChain + Ollama + HuggingFace
-* 🫮 SQLAlchemy
-* 🌐 Node.js (for UI or extended API)
-* 🧠 Mistral 7B / LLaMA3
-
----
-
-## 🛡️ Security
-
-The validation agent checks whether the user input relates to sensitive topics like **salary** or **payment**, returning `"Blocked"` if found.
-All LLM interactions are **local and secure**, ensuring full data privacy.
-
----
-
-## ✨ Authors
-
-Developed by **Raphael Augusto Santos** and **Rafael Azzolini**
-[GitHub](https://github.com/raphael-santosz)
+**Setup Notes**
+- Ollama must be installed and running locally.
+- No external API calls: full offline processing for privacy and control.
 
 ---
 
@@ -94,95 +95,196 @@ Developed by **Raphael Augusto Santos** and **Rafael Azzolini**
 
 ```mermaid
 flowchart TD
-    U[User sends question] --> IA1
-    IA1 -->|Generates raw_query + result_data/tag| IA2
-    IA2 -->|Validates/Refines query| Check{IA2 Error?}
-    Check -->|Yes| IA2Retry[IA2 retries refinement]
-    Check -->|No| IA3
-    IA2Retry -->|Refined again| IA3
-    IA3 -->|Natural language response| U
+    Start[User sends question and/or document] --> D{Has document?}
+
+    %% SEM DOCUMENTO
+    D -->|No| IA1Only[Run IA1]
+    IA1Only --> B1{IA1 returned BLOCKED?}
+    B1 -->|Yes| IA3A[Run IA3 with BLOCKED flag]
+    B1 -->|No| Q1{Query result status}
+    Q1 -->|Error or No Results| IA2A[IA2 attempts refinement] --> IA3B[Run IA3 with IA2 refined query]
+    Q1 -->|Valid| IA2A_2[Run IA2] --> IA3B
+
+    %% COM DOCUMENTO
+    D -->|Yes| Parallel[Run IA1 + IA4 in parallel]
+    Parallel --> IA4A[IA4 extracts doc_answer]
+    Parallel --> B2{IA1 returned BLOCKED?}
+    B2 -->|Yes| IA3C[Run IA3 with BLOCKED flag]
+    B2 -->|No| Q2{Query result status}
+    Q2 -->|Error or No Results| IA2B[IA2 attempts refinement] --> IA3D[Run IA3 with IA2 refined query + doc_answer]
+    Q2 -->|Valid| IA2B_2[Run IA2] --> IA3D
 ```
 
 ---
 
-## IA1 - Query Execution Flow
 
-1. **IA1 generates `raw_query`** (using LLM + schema + examples)
-2. **Executes the Query**: `conn.execute(raw_query).fetchall()`
+## IA1 – Query Generation & Execution
 
 ```mermaid
 flowchart TD
-    A[IA1 generates raw_query] --> B{Executes the query}
-    B -->|SQL Exception| C[SQL_ERROR_OCCURRED]
-    B -->|OK| D{Validate result format}
-    D -->|Invalid| E[INVALID_RESULT_FORMAT]
-    D -->|Valid| F{Is result_data empty?}
-    F -->|Yes| G[NO_RESULTS_FOUND]
-    F -->|No| H[Return valid query and data]
+    Start[IA1 receives question + user_name] --> Guard{Violates security rules?}
+    Guard -->|Yes| Blocked[Return BLOCKED → skip IA2]
+    Guard -->|No| GenQuery[Generate raw_query via LLM and examples] --> ExecQuery{Run query in database}
+
+    ExecQuery -->|SQL Error| SQL_ERROR[Return SQL_ERROR_OCCURRED]
+    ExecQuery -->|Invalid result| INVALID[Return INVALID_RESULT_FORMAT]
+    ExecQuery -->|Empty result| EMPTY[Return NO_RESULTS_FOUND]
+    ExecQuery -->|Valid result| SUCCESS[Return query and result_data]
 ```
 
-### Summary of possible IA1 outputs:
+### 🧠 Responsibilities
 
-| Case                     | Output                                               |
-| ------------------------ | ---------------------------------------------------- |
-| SQL Exception            | `"SQL_ERROR_OCCURRED"`                               |
-| Invalid result format    | `"INVALID_RESULT_FORMAT"`                            |
-| Query with no results    | `"NO_RESULTS_FOUND"`                                 |
-| Query with valid results | `{ "query": raw_query, "result_data": result_data }` |
+- Interpret the user question and generate a SQL query using a local LLM with schema prompt and examples.
+- Execute the query directly on the database connection.
+- Return the result or raise appropriate signals in case of error or access denial.
 
 ---
 
-## IA2 - Query Validation and Refinement Flow
+### 📥 Inputs Received
 
-1. **IA2 receives:** `user_question`, `generated_query`, `query_results`, `schema`
-2. **Decides flow based on `query_results`:**
+- `user_question`
+- `user_name` (for validation agent)
+- `schema_prompt` + `examples`
+
+---
+
+### 🧾 Output Scenarios
+
+| Scenario                  | Output                                               |
+|---------------------------|------------------------------------------------------|
+| Access denied             | `"BLOCKED"`                                          |
+| SQL Exception             | `"SQL_ERROR_OCCURRED"`                               |
+| Invalid result format     | `"INVALID_RESULT_FORMAT"`                            |
+| Query with no results     | `"NO_RESULTS_FOUND"`                                 |
+| Query with valid results  | `{ "query": raw_query, "result_data": result_data }` |
+
+---
+
+## IA2 – Query Validation & Semantic Refinement
 
 ```mermaid
 flowchart TD
-    A[IA2 receives input] --> B{Is query_results an error tag?}
-    B -->|SQL_ERROR_OCCURRED| C[IA2 tries to correct SQL error]
-    B -->|INVALID_RESULT_FORMAT| D[IA2 regenerates query from scratch]
-    B -->|NO_RESULTS_FOUND| E[IA2 validates if this is semantically expected → can accept empty result]
-    B -->|Valid data| F[IA2 validates if query correctly answers user_question]
+    A[IA2 recebe input] --> B{query_results contém erro?}
+    B -->|SQL_ERROR_OCCURRED| C[Tenta corrigir erro de SQL]
+    B -->|INVALID_RESULT_FORMAT| D[Regenera query do zero]
+    B -->|NO_RESULTS_FOUND| E[Valida se é esperado]
+    B -->|Dados válidos| F[Valida semântica da query]
 ```
 
-### Notes:
+### 🧠 Responsibilities
 
-* If `SQL_ERROR_OCCURRED` → IA2 can correct things like quotes, joins, alias issues, etc.
-* If `INVALID_RESULT_FORMAT` → IA2 assumes IA1 generated a structurally invalid query → must regenerate.
-* If `NO_RESULTS_FOUND` → IA2 can accept result as valid (depends on the case, e.g. non-existent employee).
-* If valid `result_data` → IA2 performs semantic validation → decides if the query correctly answers the question.
+- Refine or regenerate queries based on the outcome of IA1.
+- Detect and correct issues like syntax errors, logic flaws, or misinterpretations.
+- Ensure the final query semantically answers the user’s question.
 
 ---
 
-## IA3 - Natural Language Response
+### 📥 Inputs Received
+
+- `user_question`
+- `generated_query` (from IA1)
+- `query_results`
+- `schema`
+
+---
+
+### 🧾 Output Scenarios
+
+| Scenario                  | IA2 Action                                                   |
+|---------------------------|--------------------------------------------------------------|
+| `SQL_ERROR_OCCURRED`      | Attempt SQL fix (e.g., aliasing, quote mismatch)             |
+| `INVALID_RESULT_FORMAT`   | Regenerate the query completely                              |
+| `NO_RESULTS_FOUND`        | Determine if result is valid or expected                     |
+| Valid data returned       | Perform semantic validation on query                         |
+
+---
+
+## IA4 – Document Reader & Context Extractor
+
+```mermaid
+flowchart TD
+    UserDocument[User uploads a document with question] --> IA4
+    IA4 -->|Extracts answer from file and sends to IA3| IA3
+```
+
+### 🧠 Responsibilities
+
+- Process the document uploaded by the user and extract relevant textual information.
+- Use a specialized prompt to generate a possible natural language answer based on the document.
+- Return the extracted context (`doc_answer`) for enrichment in the final response (via IA3).
+
+---
+
+### 📥 Inputs Received
+
+- `user_question`
+- `file_url` (path to uploaded document)
+
+---
+
+### ⚙️ Processing Steps
+
+1. Extract text content from the provided file (`.txt`, `.pdf`, `.docx`, etc.).
+2. Load and fill the `document_reader.txt` prompt with:
+   - `input` = user question
+   - `text_document` = full extracted text
+3. Execute the prompt with the local LLM (e.g. `llama3:8b`).
+4. Return the model’s answer if valid.
+
+---
+
+### 🧾 Output Scenarios
+
+| Scenario                        | IA4 Output               |
+|--------------------------------|--------------------------|
+| No file or extraction failed   | `""`                     |
+| No relevant information found  | `"NO_DOCUMENT_DATA"`     |
+| Valid answer from document     | Extracted natural answer |
+
+
+---
+
+## IA3 – Natural Language Generation & Final Output
 
 ```mermaid
 flowchart TD
     IA2 --> IA3
-    IA3 -->|Generates natural language response in the same language of the user question| User
+    IA4 --> IA3
+    IA3 -->|Generates final answer in user's language and tone| User
 ```
 
-* IA3 always receives:
+### 🧠 Responsibilities
 
-  * `user_question`
-  * `query_results`
-  * `formatting_guide`
-  * `answering_guide`
-
-* IA3:
-
-  * If `NO_RESULTS_FOUND` or `SQL_ERROR_OCCURRED` → responds with a polite natural response.
-  * If valid results → responds with the results following the `answering_guide`.
+- Generate a human-friendly response in the same language and tone of the original question.
+- Use the `formatting_guide` and `answering_guide` to adapt content, terminology and structure.
+- Merge database results with any extracted document-based answer (`doc_answer`), when available.
+- Gracefully handle special scenarios such as blocked access or missing results.
 
 ---
 
-## Final Notes
+### 📥 Inputs Received
 
-* The system is designed to be **modular, robust and traceable**.
-* The IA1 tags help IA2 not get confused.
-* The whole pipeline is controlled: IA1 → IA2 → IA3
+- `user_question`
+- `query_results` (from IA1 or refined by IA2)
+- `doc_answer` (optional, from IA4)
+- `formatting_guide`
+- `answering_guide`
+- `blocked` flag (if present)
 
 ---
 
-🚀 **Ready for production use or extension with other DBs / models / UI.**
+### 🧾 Output Scenarios
+
+| Scenario                  | IA3 Response Example                                         |
+|---------------------------|--------------------------------------------------------------|
+| Valid result              | `"Carlos earns €4,500 per month as of March 2023."`         |
+| No results found          | `"No matching records were found for your query."`          |
+| SQL/system error          | `"We couldn’t complete your request due to a technical issue."` |
+| Access blocked            | `"Access to this information is restricted."`               |
+| Document result available | Combines SQL data + document insight in a unified response  |
+
+---
+
+## ✨ Authors
+
+Developed by [Raphael Augusto Santos](https://github.com/raphael-santosz) and Rafael Azzolini
