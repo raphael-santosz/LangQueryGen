@@ -1,6 +1,6 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate
-from utils.tools import carregar_guides_md, carregar_prompt, format_query_results
+from utils.tools import carregar_guides_md, carregar_prompt, format_query_results, remove_markdown
 from langdetect import detect
 
 # Inicializar modelo
@@ -31,10 +31,18 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # Função principal da IA3
-def generate_answer(user_question, query_data, document_data):
+def generate_answer(user_question, query_data, document_data, blocked=False):
     # Detectar idioma da pergunta
+    print("🔒 Status de segurança (blocked):", blocked)
     lang = detect(user_question)
     response_language = {'en': 'English', 'es': 'Spanish', 'pt': 'Portuguese'}.get(lang, 'English')
+    if blocked:
+        messages = {
+            'pt': "⛔ O acesso a essas informações é restrito. Por questões de privacidade, não posso fornecer os dados solicitados.",
+            'es': "⛔ El acceso a esta información está restringido. Por motivos de privacidad, no puedo proporcionarla.",
+            'en': "⛔ Access to this information is restricted. Due to privacy reasons, I cannot provide the requested data."
+        }
+        return messages.get(lang, messages['en'])
 
     # Verificações de conteúdo
     formatted_query = format_query_results(query_data)
@@ -70,4 +78,5 @@ def generate_answer(user_question, query_data, document_data):
 
     # Executar modelo
     result = llm.invoke(inputs)
-    return result.content
+    
+    return remove_markdown(result.content)

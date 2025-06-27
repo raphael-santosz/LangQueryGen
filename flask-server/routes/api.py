@@ -13,9 +13,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @api_bp.route("/generate-query", methods=["POST"])
 def generate_query():
     try:
-        # Verificando o corpo da requisição
-        print("Recebendo a requisição...")
-
         # Captura a mensagem e o token enviados
         question = request.form.get('question')
         token = request.form.get('token')

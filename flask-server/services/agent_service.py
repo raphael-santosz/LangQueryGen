@@ -8,23 +8,26 @@ import concurrent.futures
 
 def run_query_agent(query_request: QueryRequest):
     try:
-        print("Iniciando a geração da consulta SQL e análise do documento...")
 
         # Caso 1: Somente pergunta (sem documento)
         if query_request.question and not query_request.file_url:
             print("⚙️ Executando IA1, IA2 e IA3 (sem documento)")
             raw_query, result_data = generate_sql_query(query_request)
 
-            refined_query, refined_result_data = validate_and_refine_query(
-                query_request.question, raw_query, result_data,
-                query_request.access_level, query_request.user_name
-            )
-
-            if refined_result_data:
-                answer = generate_answer(query_request.question, refined_result_data, "")
+            if result_data == "BLOCKED":
+                print("⛔ Acesso bloqueado detectado. Pulando IA2 e indo direto para IA3.")
+                answer = generate_answer(query_request.question, [], "", blocked=True)
             else:
-                error_message = "Não foi possível gerar uma resposta válida."
-                answer = generate_answer(query_request.question, [error_message], "")
+                refined_query, refined_result_data = validate_and_refine_query(
+                    query_request.question, raw_query, result_data,
+                    query_request.access_level, query_request.user_name
+                )
+
+                if refined_result_data:
+                    answer = generate_answer(query_request.question, refined_result_data, "")
+                else:
+                    error_message = "Não foi possível gerar uma resposta válida."
+                    answer = generate_answer(query_request.question, [error_message], "")
 
         # Caso 2: Somente documento (sem pergunta)
         elif query_request.file_url and not query_request.question:
@@ -42,19 +45,20 @@ def run_query_agent(query_request: QueryRequest):
                 raw_query, result_data = future_sql.result()
                 document_answer = future_doc.result()
 
-            # IA2: validação apenas da query gerada
-            refined_query, refined_result_data = validate_and_refine_query(
-                query_request.question, raw_query, result_data,
-                query_request.access_level, query_request.user_name
-            )
+            if result_data == "BLOCKED":
+                print("⛔ Acesso bloqueado detectado. Pulando IA2 e indo direto para IA3.")
+                answer = generate_answer(query_request.question, [], document_answer, blocked=True)
+            else:
+                refined_query, refined_result_data = validate_and_refine_query(
+                    query_request.question, raw_query, result_data,
+                    query_request.access_level, query_request.user_name
+                )
 
-            # IA3: Decide entre dados da query e resposta do documento
-            answer = generate_answer(
-                query_request.question,
-                refined_result_data,
-                document_answer
-            )
-
+                answer = generate_answer(
+                    query_request.question,
+                    refined_result_data,
+                    document_answer
+                )
 
         else:
             print("⚠️ Nenhuma entrada válida encontrada.")

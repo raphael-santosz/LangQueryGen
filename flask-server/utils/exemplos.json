@@ -38,7 +38,7 @@
         "What is the proportional 13th salary value for employee FuncionarioX?",
         "¿Cuál es el valor del décimo tercer salario proporcional del empleado FuncionarioX?"
       ],
-      "query": "SELECT (Salario/12) * DATEDIFF(month, CAST(DATEADD(yy, DATEDIFF(yy, 0, GETDATE()), 0) AS date), CAST(GETDATE() AS date)) AS DateDiff FROM Funcionario WHERE Nome = '{nombre_empleado}'"
+      "query": "SELECT (Salario/12) * DATEDIFF(month, CAST(DATEADD(yy, DATEDIFF(yy, 0, GETDATE()), 0) AS date), CAST(GETDATE() AS date)) AS ThirteenthSalary FROM Funcionario WHERE Nome = '{nombre_empleado}'"
     },
     {
       "perguntas": [

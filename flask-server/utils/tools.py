@@ -16,6 +16,9 @@ from typing import Optional
 import docx2txt
 import PyPDF2
 import markdown
+from langchain_core.prompts import PromptTemplate
+from langchain_ollama import ChatOllama
+from itertools import islice
 
 def extract_sql_query_from_response(result) -> str:
     """
@@ -140,7 +143,6 @@ def get_relevant_table_info(db: SQLDatabase) -> dict:
 def initialize_firebase():
     if not firebase_admin._apps:
         # Construye la ruta absoluta al JSON
-        print("[DEBUG] Inicializando Firebase...")
         current_dir = os.path.dirname(os.path.abspath(__file__))  # flask-server/utils
         key_path = os.path.join(current_dir, "..", "secrets", "serviceAccountKey.json")
         key_path = os.path.abspath(key_path)  # Normaliza la ruta final
@@ -154,14 +156,13 @@ def decrypt_token(token: str) -> tuple[str, str]:
         initialize_firebase()
         decoded_token = auth.verify_id_token(token)
         uid = decoded_token.get("uid")
-        print(f"[DEBUG] UID extraído do token: {uid}")
 
         db_firestore = firestore.client()
         doc = db_firestore.collection("Users").document(uid).get()
 
         if doc.exists:
             user_data = doc.to_dict()
-            print(f"[Firebase DEBUG] user_data extraído: {user_data}")
+            print(f"[Firebase] user_data: {dict(islice(user_data.items(), 4))}")
             position = user_data.get("position", "").lower()
             name = user_data.get("name", "")  # ⬅️ Obtener nombre
 
@@ -236,3 +237,48 @@ def format_query_results(query_results):
         formatted_rows.append(f"Row {i}: {row_text}")
 
     return "\n".join(formatted_rows)
+
+def remove_markdown(text):
+    return re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+
+verificador_llm = ChatOllama(model="llama3:8b", temperature=0)
+
+def access_guard(user_name: str, question: str) -> str:
+    """
+    Retorna 'BLOCKED' se:
+    - a pergunta mencionar outro nome diferente do usuário;
+    - ou se fizer referência à folha de pagamento total ou salários da empresa.
+    Caso contrário, retorna 'ALLOWED'.
+    """
+
+    prompt_template = PromptTemplate(
+        input_variables=["user_name", "question"],
+        template="""
+You are an access validation filter.
+
+Your job is to decide if a given question should be answered based on these strict rules:
+
+RULES:
+1. If the question refers to a person with a name different from {user_name}, return exactly: BLOCKED.
+2. If the question refers to total payroll, salaries of all employees, or any global salary data, return exactly: BLOCKED.
+3. If the question refers only to the user's own information or to general company policies (e.g. vacation, schedules), return exactly: ALLOWED.
+4. If no other names are clearly mentioned, assume the user is referring to themselves and return ALLOWED.
+
+User’s full name: {user_name}
+Question: {question}
+
+Your answer must be either BLOCKED or ALLOWED — nothing else.
+"""
+    )
+
+    chain = prompt_template | verificador_llm
+
+    try:
+        response = chain.invoke({
+            "user_name": user_name,
+            "question": question
+        }).content.strip()
+        return "BLOCKED" if response.upper() == "BLOCKED" else "ALLOWED"
+    except Exception as e:
+        print(f"[verificar_nome_com_ia] Error: {e}")
+        return "BLOCKED"

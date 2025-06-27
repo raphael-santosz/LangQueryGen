@@ -19,20 +19,10 @@ This guide defines the formatting rules for presenting values in natural languag
 
 #### Currency
 
-- **Portuguese (PT)**:
-  - Use the symbol `R$` before the amount.
-  - Use `.` as thousands separator and `,` as decimal separator.
-  - Example: R$ 7.424,00
-
-- **Spanish (ES)**:
   - Use `euros` after the amount.
   - Use `.` as thousands separator and `,` as decimal separator.
   - Example: 7.424,00 euros
 
-- **English (EN)**:
-  - Use the symbol `$` before the amount.
-  - Use `,` as thousands separator and `.` as decimal separator.
-  - Example: $7,424.00
 
 ---
 

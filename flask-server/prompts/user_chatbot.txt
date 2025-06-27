@@ -1,41 +1,44 @@
-### TASK
-You are an AI assistant responsible for answering the USER QUESTION using the available data sources below.
+  ### TASK
+  You are an AI assistant responsible for answering the USER QUESTION using the available data sources below.
 
----
+  ---
 
-### USER QUESTION
-{user_question}
+  ### USER QUESTION
+  {user_question}
 
----
+  ---
 
-### QUERY RESULTS
-{query_results}
+  ### QUERY RESULTS
+  {query_results}
 
----
+  ---
 
-### DOCUMENT RESULTS
-{document_results}
+  ### DOCUMENT RESULTS
+  {document_results}
 
----
+  ---
 
-### INSTRUCTIONS
-- If DOCUMENT RESULTS is different from "NO_DOCUMENT_DATA", consider its content to answer the question.
-- If QUERY RESULTS is different from "NO_QUERY_DATA" or "NO_RESULTS_FOUND", also consider its content.
-- If both contain information, synthesize the answer using both.
-- If only one contains useful data, use only that one.
-- Do NOT use Markdown formatting (like **bold**, *italic*, etc.) in the final answer. Write plain text only.
-- If neither contains relevant data, respond: "I'm sorry, but I couldn't find the answer in the available data."
-- Your answer must:
-  - Be clear and concise.
-  - Be written in the same language as the USER QUESTION.
-  - NOT mention the origin of the information (i.e., don't say 'according to the document' or 'based on the query').
-  - 🟢 If the answer includes dates, numbers, currencies, boolean values or times, you MUST reformat the answer following the formatting rules defined in the FORMATTING GUIDE.
-- You are allowed to rephrase or reformat values (like "5000,00 Reais") to apply correct formatting, as long as the meaning is preserved exactly.
-- Use this language for the response: {response_language}
+  ### INSTRUCTIONS
+  - If DOCUMENT RESULTS is different from "NO_DOCUMENT_DATA", consider its content to answer the question.
+  - If QUERY RESULTS is different from "NO_QUERY_DATA" or "NO_RESULTS_FOUND", also consider its content.
+  - If both contain information, synthesize the answer using both.
+  - If only one contains useful data, use only that one.
+  - If neither contains relevant data, respond: "I'm sorry, but I couldn't find the answer in the available data."
+  - Your answer must:
+    - Be clear and concise.
+    - Be written in the same language as the USER QUESTION.
+    - NOT mention the origin of the information (i.e., don't say 'according to the document' or 'based on the query').
+    - 🟢 If the answer includes dates, numbers, currencies, boolean values or times, you MUST reformat the answer following the formatting rules defined in the FORMATTING GUIDE.
+  - If DOCUMENT RESULTS contains a numeric value, return it exactly as it appears, only applying formatting rules from FORMATTING GUIDE.
+  - You MUST apply the FORMATTING GUIDE if the answer includes numeric values, even if the field name does not include a currency symbol.
+  - Do not convert or scale values.
+  - All monetary values should be interpreted as euros, regardless of how they are labeled in the data source.
+  - Do not fabricate values or reuse numbers from formatting examples. Always ground your answer strictly on the data in QUERY RESULTS: {query_results}.
+  - Use this language for the response: {response_language}
 
-### FORMATTING GUIDE
-{formatting_guide}
+  ### FORMATTING GUIDE
+  {formatting_guide}
 
----
+  ---
 
-### FINAL ANSWER
+  ### FINAL ANSWER

@@ -4,8 +4,9 @@ from langchain.chains import LLMChain
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy import text
 from models.model import QueryRequest
-from utils.tools import carregar_prompt, extract_sql_query_from_response, get_relevant_table_info, carregar_exemplos_string
+from utils.tools import carregar_prompt, extract_sql_query_from_response, get_relevant_table_info, carregar_exemplos_string, access_guard
 import json
+
 
 # Configuración del modelo
 llm = ChatOllama(model="llama3:8b", temperature=0)
@@ -27,8 +28,13 @@ def generate_sql_query(query_request: QueryRequest):
         # 📦 Cargar el prompt según el nivel de acceso
         if query_request.access_level == "Funcionário":
             print("User with low access connected.")
-            template_str = carregar_prompt("prompts/lowAccess_primary.txt")
-            input_variables = ["input", "top_k", "table_info", "exemplos_string", "user_name"]
+            check = access_guard(query_request.user_name, query_request.question)
+            if check == "ALLOWED":
+                template_str = carregar_prompt("prompts/lowAccess_primary.txt")
+                input_variables = ["input", "top_k", "table_info", "exemplos_string", "user_name"]
+            elif check == "BLOCKED":
+                print("❌ Acesso negado por tentativa de acessar dados de outro funcionário ou folha salarial.")
+                return None, "BLOCKED"
         else:
             print("User with high access connected.")
             template_str = carregar_prompt("prompts/highAccess_primary.txt")

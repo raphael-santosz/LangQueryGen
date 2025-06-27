@@ -213,9 +213,6 @@ const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let messageText = input.trim() || '';
     if (selectedFiles.length > 0) {
       const fileNames = selectedFiles.map((file) => file.name).join(', ');
-      messageText += messageText
-        ? `\n${t('uploadedFiles', { defaultMessage: 'Uploaded files: ' })}${fileNames}`
-        : `${t('uploadedFiles', { defaultMessage: 'Uploaded files: ' })}${fileNames}`;
     }
 
     const newMessages: Message[] = [...messages, { sender: 'user', text: messageText }];
