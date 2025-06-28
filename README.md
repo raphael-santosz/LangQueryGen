@@ -1,19 +1,20 @@
 # LangQueryGen
 
-LangQueryGen is a robust AI-driven backend designed to convert natural language questions into SQL queries using a **Retrieval-Augmented Generation (RAG)** approach. It leverages **LangChain**, **Ollama** (local LLMs such as Mistral 7B or LLaMA 3), and **Flask** for query orchestration. The system ensures secure, fully local execution with built-in semantic validation and seamless integration with Node.js for interface or automation layers.
+LangQueryGen is a robust AI-driven backend designed to convert natural language questions into SQL queries using a **Retrieval-Augmented Generation (RAG)** approach. It leverages **LangChain**, **Ollama** (local LLMs such as LLaMA 3 and Gemma:7B-Instruct), and **Flask** for query orchestration. The system ensures secure, fully local execution with built-in semantic validation and seamless integration with Node.js for interface or automation layers.
 
 ---
 
 ## 🚀 Key Capabilities
 
-* **Natural Language → SQL Translation** using local LLMs and structured schema prompts  
-* **RAG Pipeline** powered by FAISS vector search and E5/HuggingFace embeddings  
-* **Input Validation Agent** for enforcing security and access control  
-* **Modular Backend Architecture** with Flask and clean service separation  
-* **Frontend/API Gateway Compatibility** via Node.js  
+* **Natural Language → SQL Translation** using local LLMs and structured schema prompts
+* **RAG Pipeline** powered by FAISS vector search and E5/HuggingFace embeddings
+* **Input Validation Agent** for enforcing security and access control
+* **Modular Backend Architecture** with Flask and clean service separation
+* **Frontend/API Gateway Compatibility** via Node.js
 * **Offline-First Design** – all AI operations are performed locally, no cloud dependency
 
 ---
+
 ## 📁 Project Layout
 
 ```
@@ -40,11 +41,12 @@ LangQueryGen/
 ├── requirements.txt           # Python dependencies
 └── README.md
 ```
+
 ---
 
-## How to Run the Project
+## 🛠️ How to Run the Project
 
-### 🔧 Backend (Flask)
+### Backend (Flask)
 
 ```bash
 # Clone the repository
@@ -62,7 +64,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### 💻 Frontend (Next.js)
+### Frontend (Next.js)
 
 ```bash
 cd ../frontend
@@ -79,19 +81,42 @@ npm run dev
 ## ⚙️ Stack & Requirements
 
 **Core Technologies**
-- Python 3.10+ with Flask + Pydantic
-- Node.js 18+ with Next.js (UI or orchestration)
-- LangChain + Ollama (local LLMs like Mistral 7B, LLaMA3)
-- SQLAlchemy + SQL Server (or compatible DB)
-- FAISS + HuggingFace embeddings (optional for enhanced retrieval)
+
+* Python 3.10+ with Flask + Pydantic
+* Node.js 18+ with Next.js (UI or orchestration)
+* LangChain + Ollama (local LLMs like LLaMA3, Gemma:7B-Instruct)
+* SQLAlchemy + SQL Server (or compatible DB)
+* FAISS + HuggingFace embeddings (optional for enhanced retrieval)
 
 **Setup Notes**
-- Ollama must be installed and running locally.
-- No external API calls: full offline processing for privacy and control.
+
+* Ollama must be installed and running locally.
+* No external API calls: full offline processing for privacy and control.
+
+---
+## 🧠 AI Agents & Prompt Logic
+
+LangQueryGen orchestrates four specialized AI agents, each with a distinct role in the natural language-to-SQL pipeline. The system dynamically selects prompt files and adapts behavior based on the user's access level:
+
+| AI Agent | Responsibility                                                   | LLM Used            | Prompt Scope (Based on Access Level)                            |
+|----------|------------------------------------------------------------------|---------------------|------------------------------------------------------------------|
+| IA1      | Generates and executes the SQL query based on the user’s question | `llama3:8b`         | `lowAccess_primary.txt` or `highAccess_primary.txt`             |
+| IA2      | Validates and refines the SQL query if needed                    | `gemma:7b-instruct` | `lowAccess_validate.txt` or `highAccess_validate.txt`           |
+| IA4      | Analyzes uploaded documents and extracts contextual answers      | `llama3:8b`         | `document_reader.txt` (universal)                               |
+| IA3      | Synthesizes a final answer combining query results and context   | `gemma:7b-instruct` | `formatting_guide.txt`, `answering_guide.txt` (universal)       |
+
+### 🔐 Prompt Routing Based on Access Level
+
+| Access Level        | Prompt Files Used                                  | Allowed Data Scope                                         |
+|---------------------|----------------------------------------------------|------------------------------------------------------------|
+| Standard Employee   | `lowAccess_primary.txt`, `lowAccess_validate.txt`  | Personal data + public company policy information          |
+| Manager/Admin       | `highAccess_primary.txt`, `highAccess_validate.txt`| Full access to all employee records and internal HR data   |
+
+> IA3 and IA4 always use universal prompts regardless of access level.
 
 ---
 
-## 🗜️ System Architecture
+## 🧩 System Architecture
 
 ```mermaid
 flowchart TD
@@ -117,7 +142,6 @@ flowchart TD
 
 ---
 
-
 ## IA1 – Query Generation & Execution
 
 ```mermaid
@@ -132,31 +156,27 @@ flowchart TD
     ExecQuery -->|Valid result| SUCCESS[Return query and result_data]
 ```
 
-### 🧠 Responsibilities
+### Responsibilities
 
-- Interpret the user question and generate a SQL query using a local LLM with schema prompt and examples.
-- Execute the query directly on the database connection.
-- Return the result or raise appropriate signals in case of error or access denial.
+* Interpret the user question and generate a SQL query using a local LLM with schema prompt and examples.
+* Execute the query directly on the database connection.
+* Return the result or raise appropriate signals in case of error or access denial.
 
----
+### Inputs Received
 
-### 📥 Inputs Received
+* `user_question`
+* `user_name` (for validation agent)
+* `schema_prompt` + `examples`
 
-- `user_question`
-- `user_name` (for validation agent)
-- `schema_prompt` + `examples`
+### Output Scenarios
 
----
-
-### 🧾 Output Scenarios
-
-| Scenario                  | Output                                               |
-|---------------------------|------------------------------------------------------|
-| Access denied             | `"BLOCKED"`                                          |
-| SQL Exception             | `"SQL_ERROR_OCCURRED"`                               |
-| Invalid result format     | `"INVALID_RESULT_FORMAT"`                            |
-| Query with no results     | `"NO_RESULTS_FOUND"`                                 |
-| Query with valid results  | `{ "query": raw_query, "result_data": result_data }` |
+| Scenario                 | Output                                                |
+| ------------------------ | ----------------------------------------------------- |
+| Access denied            | "BLOCKED"                                             |
+| SQL Exception            | "SQL\_ERROR\_OCCURRED"                                |
+| Invalid result format    | "INVALID\_RESULT\_FORMAT"                             |
+| Query with no results    | "NO\_RESULTS\_FOUND"                                  |
+| Query with valid results | { "query": raw\_query, "result\_data": result\_data } |
 
 ---
 
@@ -171,31 +191,27 @@ flowchart TD
     B -->|Dados válidos| F[Valida semântica da query]
 ```
 
-### 🧠 Responsibilities
+### Responsibilities
 
-- Refine or regenerate queries based on the outcome of IA1.
-- Detect and correct issues like syntax errors, logic flaws, or misinterpretations.
-- Ensure the final query semantically answers the user’s question.
+* Refine or regenerate queries based on the outcome of IA1.
+* Detect and correct issues like syntax errors, logic flaws, or misinterpretations.
+* Ensure the final query semantically answers the user’s question.
 
----
+### Inputs Received
 
-### 📥 Inputs Received
+* `user_question`
+* `generated_query` (from IA1)
+* `query_results`
+* `schema`
 
-- `user_question`
-- `generated_query` (from IA1)
-- `query_results`
-- `schema`
+### Output Scenarios
 
----
-
-### 🧾 Output Scenarios
-
-| Scenario                  | IA2 Action                                                   |
-|---------------------------|--------------------------------------------------------------|
-| `SQL_ERROR_OCCURRED`      | Attempt SQL fix (e.g., aliasing, quote mismatch)             |
-| `INVALID_RESULT_FORMAT`   | Regenerate the query completely                              |
-| `NO_RESULTS_FOUND`        | Determine if result is valid or expected                     |
-| Valid data returned       | Perform semantic validation on query                         |
+| Scenario                | IA2 Action                                       |
+| ----------------------- | ------------------------------------------------ |
+| SQL\_ERROR\_OCCURRED    | Attempt SQL fix (e.g., aliasing, quote mismatch) |
+| INVALID\_RESULT\_FORMAT | Regenerate the query completely                  |
+| NO\_RESULTS\_FOUND      | Determine if result is valid or expected         |
+| Valid data returned     | Perform semantic validation on query             |
 
 ---
 
@@ -207,40 +223,34 @@ flowchart TD
     IA4 -->|Extracts answer from file and sends to IA3| IA3
 ```
 
-### 🧠 Responsibilities
+### Responsibilities
 
-- Process the document uploaded by the user and extract relevant textual information.
-- Use a specialized prompt to generate a possible natural language answer based on the document.
-- Return the extracted context (`doc_answer`) for enrichment in the final response (via IA3).
+* Process the document uploaded by the user and extract relevant textual information.
+* Use a specialized prompt to generate a possible natural language answer based on the document.
+* Return the extracted context (`doc_answer`) for enrichment in the final response (via IA3).
 
----
+### Inputs Received
 
-### 📥 Inputs Received
+* `user_question`
+* `file_url` (path to uploaded document)
 
-- `user_question`
-- `file_url` (path to uploaded document)
-
----
-
-### ⚙️ Processing Steps
+### Processing Steps
 
 1. Extract text content from the provided file (`.txt`, `.pdf`, `.docx`, etc.).
 2. Load and fill the `document_reader.txt` prompt with:
-   - `input` = user question
-   - `text_document` = full extracted text
-3. Execute the prompt with the local LLM (e.g. `llama3:8b`).
+
+   * `input` = user question
+   * `text_document` = full extracted text
+3. Execute the prompt with the local LLM (e.g. `llama3:8b`, `gemma:7b-instruct`).
 4. Return the model’s answer if valid.
 
----
+### Output Scenarios
 
-### 🧾 Output Scenarios
-
-| Scenario                        | IA4 Output               |
-|--------------------------------|--------------------------|
-| No file or extraction failed   | `""`                     |
-| No relevant information found  | `"NO_DOCUMENT_DATA"`     |
-| Valid answer from document     | Extracted natural answer |
-
+| Scenario                      | IA4 Output               |
+| ----------------------------- | ------------------------ |
+| No file or extraction failed  | ""                       |
+| No relevant information found | "NO\_DOCUMENT\_DATA"     |
+| Valid answer from document    | Extracted natural answer |
 
 ---
 
@@ -253,38 +263,35 @@ flowchart TD
     IA3 -->|Generates final answer in user's language and tone| User
 ```
 
-### 🧠 Responsibilities
+### Responsibilities
 
-- Generate a human-friendly response in the same language and tone of the original question.
-- Use the `formatting_guide` and `answering_guide` to adapt content, terminology and structure.
-- Merge database results with any extracted document-based answer (`doc_answer`), when available.
-- Gracefully handle special scenarios such as blocked access or missing results.
+* Generate a human-friendly response in the same language and tone of the original question.
+* Use the `formatting_guide` and `answering_guide` to adapt content, terminology and structure.
+* Merge database results with any extracted document-based answer (`doc_answer`), when available.
+* Gracefully handle special scenarios such as blocked access or missing results.
 
----
+### Inputs Received
 
-### 📥 Inputs Received
+* `user_question`
+* `query_results` (from IA1 or refined by IA2)
+* `doc_answer` (optional, from IA4)
+* `formatting_guide`
+* `answering_guide`
+* `blocked` flag (if present)
 
-- `user_question`
-- `query_results` (from IA1 or refined by IA2)
-- `doc_answer` (optional, from IA4)
-- `formatting_guide`
-- `answering_guide`
-- `blocked` flag (if present)
+### Output Scenarios
 
----
-
-### 🧾 Output Scenarios
-
-| Scenario                  | IA3 Response Example                                         |
-|---------------------------|--------------------------------------------------------------|
-| Valid result              | `"Carlos earns €4,500 per month as of March 2023."`         |
-| No results found          | `"No matching records were found for your query."`          |
-| SQL/system error          | `"We couldn’t complete your request due to a technical issue."` |
-| Access blocked            | `"Access to this information is restricted."`               |
-| Document result available | Combines SQL data + document insight in a unified response  |
+| Scenario                  | IA3 Response Example                                          |
+| ------------------------- | ------------------------------------------------------------- |
+| Valid result              | "Carlos earns €4,500 per month as of March 2023."             |
+| No results found          | "No matching records were found for your query."              |
+| SQL/system error          | "We couldn’t complete your request due to a technical issue." |
+| Access blocked            | "Access to this information is restricted."                   |
+| Document result available | Combines SQL data + document insight in a unified response    |
 
 ---
 
-## ✨ Authors
+## 👥 Authors
 
-Developed by [Raphael Augusto Santos](https://github.com/raphael-santosz) and Rafael Azzolini
+* [Raphael Augusto Santos](https://github.com/raphael-santosz)
+* [Rafael Azzolini](https://github.com/rafaelazzolini1)
