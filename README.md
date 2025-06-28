@@ -101,7 +101,7 @@ LangQueryGen orchestrates four specialized AI agents, each with a distinct role 
 | AI Agent | Responsibility                                                   | LLM Used            | Prompt Scope (Based on Access Level)                            |
 |----------|------------------------------------------------------------------|---------------------|------------------------------------------------------------------|
 | IA1      | Generates and executes the SQL query based on the user’s question | `llama3:8b`         | `lowAccess_primary.txt` or `highAccess_primary.txt`             |
-| IA2      | Validates and refines the SQL query if needed                    | `gemma:7b-instruct` | `lowAccess_validate.txt` or `highAccess_validate.txt`           |
+| IA2      | Validates and refines the SQL query if needed                    | `llama3:8b`         | `lowAccess_validate.txt` or `highAccess_validate.txt`           |
 | IA4      | Analyzes uploaded documents and extracts contextual answers      | `llama3:8b`         | `document_reader.txt` (universal)                               |
 | IA3      | Synthesizes a final answer combining query results and context   | `gemma:7b-instruct` | `formatting_guide.txt`, `answering_guide.txt` (universal)       |
 
@@ -241,7 +241,7 @@ flowchart TD
 
    * `input` = user question
    * `text_document` = full extracted text
-3. Execute the prompt with the local LLM (e.g. `llama3:8b`, `gemma:7b-instruct`).
+3. Execute the prompt with the local LLM (e.g. `llama3:8b`).
 4. Return the model’s answer if valid.
 
 ### Output Scenarios
