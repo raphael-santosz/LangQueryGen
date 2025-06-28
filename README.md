@@ -184,11 +184,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[IA2 recebe input] --> B{query_results contém erro?}
-    B -->|SQL_ERROR_OCCURRED| C[Tenta corrigir erro de SQL]
-    B -->|INVALID_RESULT_FORMAT| D[Regenera query do zero]
-    B -->|NO_RESULTS_FOUND| E[Valida se é esperado]
-    B -->|Dados válidos| F[Valida semântica da query]
+    A[IA2 receives input] --> B{Does query_results contain an error?}
+    B -->|SQL_ERROR_OCCURRED| C[Try to fix SQL error]
+    B -->|INVALID_RESULT_FORMAT| D[Regenerate query from scratch]
+    B -->|NO_RESULTS_FOUND| E[Validate if result is expected]
+    B -->|Valid data| F[Perform semantic validation on query]
 ```
 
 ### Responsibilities
